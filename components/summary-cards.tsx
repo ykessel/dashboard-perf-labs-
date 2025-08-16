@@ -10,8 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionStatus } from "@/components/connection-status"
 import { OPERATORS, VALUES_KEY_LABELS, type DateRange } from "@/types/air-quality"
-// import { useSocket } from "@/hooks/use-socket"
+import { useSocket } from "@/hooks/use-socket"
 import { cn } from "@/lib/utils"
+import { config } from "@/lib/config"
 
 interface SummaryCardsProps {
   dateRange: DateRange
@@ -32,64 +33,14 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedParams, setSelectedParams] = useState<Set<string>>(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
 
-  // Simulated Socket.io data for development
-  // This simulates real-time updates without requiring a WebSocket server
-  const [isConnected, setIsConnected] = useState(true)
-  const [socketData, setSocketData] = useState<any>(null)
-  const [socketError, setSocketError] = useState<string | null>(null)
+  // Real Socket.io connection
+  const { isConnected, data: socketData, error: socketError } = useSocket(
+    config.development.enableWebSocket ? config.websocket.url : undefined
+  )
 
   // All available parameters to display in cards
   const allParams = Object.keys(VALUES_KEY_LABELS)
   const displayParams = Array.from(selectedParams)
-
-  // Simulate real-time data updates
-  const simulateRealTimeUpdates = () => {
-    const simulatedData: any = {}
-    
-    // Generate realistic values for each parameter with natural variations
-    allParams.forEach((param) => {
-      // Base values for each parameter (realistic ranges based on air quality data)
-      const baseValues = {
-        CO: 2.5,        // Carbon Monoxide (mg/m³)
-        PT08S1: 1360,   // PT08.S1 (CO) (mg/m³)
-        NMHC: 150,      // Non-methane hydrocarbons (μg/m³)
-        C6H6: 11,       // Benzene (μg/m³)
-        PT08S2: 1046,   // PT08.S2 (NMHC) (mg/m³)
-        NOx: 147,       // Nitrogen oxides (μg/m³)
-        PT08S3: 1056,   // PT08.S3 (NOx) (mg/m³)
-        NO2: 57,        // Nitrogen dioxide (μg/m³)
-        PT08S4: 1132,   // PT08.S4 (NO2) (mg/m³)
-        PT08S5: 1692,   // PT08.S5 (O3) (mg/m³)
-        T: 18.5,        // Temperature (°C)
-        RH: 49.5,       // Relative Humidity (%)
-        AH: 0.75,       // Absolute Humidity (g/m³)
-      }
-      
-      const baseValue = baseValues[param as keyof typeof baseValues] || 100
-      
-      // Add realistic variations with some trending behavior
-      const timeVariation = Math.sin(Date.now() / 10000) * 0.1 // Slow oscillation
-      const randomVariation = (Math.random() - 0.5) * 0.15 // Random noise
-      const totalVariation = timeVariation + randomVariation
-      
-      // Ensure values stay within realistic bounds
-      let newValue = Math.max(0, baseValue * (1 + totalVariation))
-      
-      // Special handling for temperature (should vary more naturally)
-      if (param === 'T') {
-        newValue = Math.max(-10, Math.min(40, newValue)) // Keep between -10°C and 40°C
-      }
-      
-      // Special handling for humidity (should be between 0-100%)
-      if (param === 'RH') {
-        newValue = Math.max(0, Math.min(100, newValue))
-      }
-      
-      simulatedData[param] = parseFloat(newValue.toFixed(2))
-    })
-    
-    setSocketData(simulatedData)
-  }
 
   const fetchSummaryData = async (selectedOperator: OPERATORS) => {
     try {
@@ -175,22 +126,9 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
     fetchSummaryData(operator)
   }, [dateRange, operator])
 
-  // Simulate real-time updates every 3 seconds
-  useEffect(() => {
-    // Initial simulation
-    simulateRealTimeUpdates()
-    
-    // Set up interval for continuous updates
-    const interval = setInterval(() => {
-      simulateRealTimeUpdates()
-    }, 3000) // Update every 3 seconds
-
-    return () => clearInterval(interval)
-  }, [])
-
+  // Update metrics when real-time data is received from Socket.io
   useEffect(() => {
     if (socketData) {
-      // Simulated Socket.io data received - update metrics with real-time data
       updateMetricsWithRealTimeData(socketData)
     }
   }, [socketData])
@@ -271,8 +209,10 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
   if (error && !socketError) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
+        {/* Header Section - Mobile Optimized */}
+        <div className="space-y-4">
+          {/* Title and Info */}
+          <div className="space-y-2">
             <h2 className="text-xl font-semibold text-foreground">
               Environmental Metrics Summary 
               <span className="text-sm font-normal text-muted-foreground ml-2">
@@ -280,57 +220,90 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
               </span>
             </h2>
             <p className="text-xs text-blue-600 dark:text-blue-400">
-              🔄 Simulated real-time data (updates every 3s)
+              🔄 Real-time data via WebSocket (updates every 2s)
             </p>
           </div>
-        <div className="flex items-center gap-2">
-            <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Parámetros ({selectedParams.size})
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 bg-background/95 backdrop-blur-sm" align="end">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={selectDefaultParameters}>
-                        Predeterminados
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={selectAllParameters}>
-                        Todos
-                      </Button>
+
+          {/* Controls - Mobile Stacked, Desktop Horizontal */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Connection Status - Always visible */}
+            <div className="flex items-center justify-center sm:justify-start">
+              <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
+            </div>
+
+            {/* Controls Container */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Parameters Button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto" 
+                    aria-label="Configure parameters"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Parámetros</span>
+                    <span className="sm:hidden">Configurar</span>
+                    <span className="text-xs">({selectedParams.size})</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 bg-background/95 backdrop-blur-sm" align="center">
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={selectDefaultParameters} 
+                          aria-label="Select default parameters"
+                          className="flex-1 sm:flex-none"
+                        >
+                          <span className="hidden sm:inline">Predeterminados</span>
+                          <span className="sm:hidden">Default</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={selectAllParameters} 
+                          aria-label="Select all parameters"
+                          className="flex-1 sm:flex-none"
+                        >
+                          <span className="hidden sm:inline">Todos</span>
+                          <span className="sm:hidden">All</span>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                      {allParams.map((param) => (
+                        <div key={param} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={`error-${param}`}
+                            checked={selectedParams.has(param)}
+                            onCheckedChange={() => toggleParameter(param)}
+                          />
+                          <label htmlFor={`error-${param}`} className="text-sm font-normal cursor-pointer text-foreground">
+                            {VALUES_KEY_LABELS[param]?.label || param}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                    {allParams.map((param) => (
-                      <div key={param} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={`error-${param}`}
-                          checked={selectedParams.has(param)}
-                          onCheckedChange={() => toggleParameter(param)}
-                        />
-                        <label htmlFor={`error-${param}`} className="text-sm font-normal cursor-pointer text-foreground">
-                          {VALUES_KEY_LABELS[param]?.label || param}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Select value={operator} onValueChange={handleOperatorChange}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={OPERATORS.AVG}>Average</SelectItem>
-                <SelectItem value={OPERATORS.MIN}>Minimum</SelectItem>
-                <SelectItem value={OPERATORS.MAX}>Maximum</SelectItem>
-              </SelectContent>
-            </Select>
+                </PopoverContent>
+              </Popover>
+
+              {/* Operator Select */}
+              <Select value={operator} onValueChange={handleOperatorChange}>
+                <SelectTrigger className="w-full sm:w-32" aria-label="Select aggregation operator">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={OPERATORS.AVG}>Average</SelectItem>
+                  <SelectItem value={OPERATORS.MIN}>Minimum</SelectItem>
+                  <SelectItem value={OPERATORS.MAX}>Maximum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -344,8 +317,10 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+      {/* Header Section - Mobile Optimized */}
+      <div className="space-y-4">
+        {/* Title and Info */}
+        <div className="space-y-2">
           <h2 className="text-xl font-semibold text-foreground">
             Environmental Metrics Summary
           </h2>
@@ -353,57 +328,90 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
             {selectedParams.size} de {allParams.length} parámetros seleccionados
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            🔄 Simulated real-time data (updates every 3s)
+            🔄 Real-time data via WebSocket (updates every 2s)
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Parámetros ({selectedParams.size})
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 bg-background/95 backdrop-blur-sm" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={selectDefaultParameters}>
-                      Predeterminados
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={selectAllParameters}>
-                      Todos
-                    </Button>
+
+        {/* Controls - Mobile Stacked, Desktop Horizontal */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Connection Status - Always visible */}
+          <div className="flex items-center justify-center sm:justify-start">
+            <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
+          </div>
+
+          {/* Controls Container */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Parameters Button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto" 
+                  aria-label="Configure parameters"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Parámetros</span>
+                  <span className="sm:hidden">Configurar</span>
+                  <span className="text-xs">({selectedParams.size})</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 bg-background/95 backdrop-blur-sm" align="center">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={selectDefaultParameters} 
+                        aria-label="Select default parameters"
+                        className="flex-1 sm:flex-none"
+                      >
+                        <span className="hidden sm:inline">Predeterminados</span>
+                        <span className="sm:hidden">Default</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={selectAllParameters} 
+                        aria-label="Select all parameters"
+                        className="flex-1 sm:flex-none"
+                      >
+                        <span className="hidden sm:inline">Todos</span>
+                        <span className="sm:hidden">All</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                    {allParams.map((param) => (
+                      <div key={param} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={param}
+                          checked={selectedParams.has(param)}
+                          onCheckedChange={() => toggleParameter(param)}
+                        />
+                        <label htmlFor={param} className="text-sm font-normal cursor-pointer text-foreground">
+                          {VALUES_KEY_LABELS[param]?.label || param}
+                        </label>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                  {allParams.map((param) => (
-                    <div key={param} className="flex items-center space-x-3">
-                      <Checkbox
-                        id={param}
-                        checked={selectedParams.has(param)}
-                        onCheckedChange={() => toggleParameter(param)}
-                      />
-                      <label htmlFor={param} className="text-sm font-normal cursor-pointer text-foreground">
-                        {VALUES_KEY_LABELS[param]?.label || param}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Select value={operator} onValueChange={handleOperatorChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={OPERATORS.AVG}>Average</SelectItem>
-              <SelectItem value={OPERATORS.MIN}>Minimum</SelectItem>
-              <SelectItem value={OPERATORS.MAX}>Maximum</SelectItem>
-            </SelectContent>
-          </Select>
+              </PopoverContent>
+            </Popover>
+
+            {/* Operator Select */}
+            <Select value={operator} onValueChange={handleOperatorChange}>
+              <SelectTrigger className="w-full sm:w-32" aria-label="Select aggregation operator">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={OPERATORS.AVG}>Average</SelectItem>
+                <SelectItem value={OPERATORS.MIN}>Minimum</SelectItem>
+                <SelectItem value={OPERATORS.MAX}>Maximum</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -412,39 +420,39 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
           <p>Selecciona al menos un parámetro para ver los datos</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {displayParams.map((param: string) => {
           const metric = metrics.find((m) => m.parameter === param)
           const label = VALUES_KEY_LABELS[param]?.label || param
 
           return (
             <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">{label}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate pr-2">{label}</CardTitle>
                 <div
                   className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center transition-all duration-300",
+                    "h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0",
                     `${getParameterColor(param)}/10`,
                   )}
                 >
                   <div
-                    className={cn("h-4 w-4 rounded-full transition-all duration-300", getParameterColor(param))}
+                    className={cn("h-3 w-3 sm:h-4 sm:w-4 rounded-full transition-all duration-300", getParameterColor(param))}
                   ></div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-2">
+                  <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
                     <p
                       className={cn(
-                        "text-lg sm:text-xl lg:text-2xl font-bold transition-all duration-500",
+                        "text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 truncate",
                         loading ? "text-muted-foreground" : getTrendColor(metric?.trend || "neutral"),
                       )}
                     >
                       {loading ? "--" : metric?.value?.toFixed(2) || "0.00"}
                     </p>
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary w-fit">
                         {operator}
                       </span>
                       {metric?.lastUpdated && (
@@ -452,7 +460,7 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
                     {!loading && metric && (
                       <div className="transition-all duration-300">{getTrendIcon(metric.trend)}</div>
                     )}
@@ -487,7 +495,7 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
       {socketError && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Simulated WebSocket error: {socketError}. Real-time updates unavailable.</AlertDescription>
+          <AlertDescription>WebSocket connection error: {socketError}. Real-time updates unavailable.</AlertDescription>
         </Alert>
       )}
     </div>

@@ -134,7 +134,7 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
           <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
           <div className="flex gap-2">
             <Select value={selectedParameter} onValueChange={setSelectedParameter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48" aria-label="Select air quality parameter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -146,7 +146,7 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
               </SelectContent>
             </Select>
             <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as INTERVALS)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32" aria-label="Select time interval">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +177,7 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
         </div>
         <div className="flex gap-3">
           <Select value={selectedParameter} onValueChange={setSelectedParameter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-48" aria-label="Select air quality parameter">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +189,7 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
             </SelectContent>
           </Select>
           <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as INTERVALS)}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32" aria-label="Select time interval">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

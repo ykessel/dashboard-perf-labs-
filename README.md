@@ -1,38 +1,171 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Air Quality Monitor Dashboard
+
+A real-time environmental data monitoring and analysis dashboard built with Next.js, TypeScript, and Socket.io.
+
+## Features
+
+- **Real-time Data**: Live air quality metrics via WebSocket connection
+- **Interactive Charts**: Dynamic timeline charts with Recharts
+- **Data Tables**: Sortable and filterable historical data tables
+- **Date Range Selection**: Custom date range picker for data filtering
+- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+- **Type Safety**: Full TypeScript implementation
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Real-time**: Socket.io client
+- **Charts**: Recharts
+- **Data Tables**: Custom hooks with sorting and pagination
+- **Backend**: Node.js WebSocket server
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd challange-dashboard-ykessel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Running the Application
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Option 1: Full Stack (Recommended)
+Run both the Next.js app and WebSocket server concurrently:
 
-## Learn More
+```bash
+npm run dev:full
+```
 
-To learn more about Next.js, take a look at the following resources:
+This will start:
+- Next.js development server on `http://localhost:3000`
+- WebSocket server on `http://localhost:3001`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Option 2: Separate Processes
+Run the servers in separate terminals:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Terminal 1 (Next.js app):
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+Terminal 2 (WebSocket server):
+```bash
+npm run websocket
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Option 3: Production Build
+```bash
+npm run build
+npm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# challange-dashboard-ykessel
-# challange-dashboard-ykessel
+## Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+# WebSocket Configuration
+NEXT_PUBLIC_WEBSOCKET_URL=http://localhost:3001
+NEXT_PUBLIC_ENABLE_WEBSOCKET=true
+
+# API Configuration
+NEXT_PUBLIC_API_URL=https://api-challenge.dofleini.com
+```
+
+## Project Structure
+
+```
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Dashboard page
+├── components/            # React components
+│   ├── ui/               # shadcn/ui components
+│   ├── dashboard-header.tsx
+│   ├── summary-cards.tsx
+│   ├── timeline-chart.tsx
+│   └── historical-data-table.tsx
+├── hooks/                # Custom React hooks
+├── lib/                  # Utilities and config
+├── types/                # TypeScript type definitions
+├── websocket-server.js   # WebSocket server
+└── package.json
+```
+
+## Features
+
+### Real-time Data
+- WebSocket connection for live air quality updates
+- Automatic reconnection on connection loss
+- Real-time metric updates every 2 seconds
+
+### Dashboard Components
+- **Summary Cards**: Real-time metrics with trend indicators
+- **Timeline Chart**: Interactive line charts for parameter trends
+- **Data Table**: Historical data with sorting and filtering
+- **Date Range Picker**: Custom date selection with calendar
+
+### Data Parameters
+- CO (Carbon Monoxide)
+- NO2 (Nitrogen Dioxide)
+- Temperature (°C)
+- Relative Humidity (%)
+- PT08.S1-S5 (Various air quality sensors)
+- NMHC (Non-methane hydrocarbons)
+- C6H6 (Benzene)
+- NOx (Nitrogen oxides)
+- AH (Absolute Humidity)
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start Next.js development server
+- `npm run websocket` - Start WebSocket server
+- `npm run dev:full` - Start both servers concurrently
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### WebSocket Server
+
+The WebSocket server (`websocket-server.js`) provides:
+- Real-time air quality data simulation
+- Automatic data generation every 2 seconds
+- CORS configuration for local development
+- Connection management and cleanup
+
+## API Integration
+
+The dashboard integrates with external APIs:
+- Air quality summary data
+- Historical data ranges
+- Timeline data for charts
+
+All API calls are proxied through Next.js API routes for security and caching.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

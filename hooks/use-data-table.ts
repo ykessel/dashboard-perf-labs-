@@ -83,10 +83,13 @@ export function useDataTable<T extends Record<string, any>>({
         const bVal = b[sort.column as keyof T]
 
         // Handle different data types
-        if (aVal instanceof Date && bVal instanceof Date) {
+        if (aVal && bVal && typeof aVal === 'object' && typeof bVal === 'object' && 
+            'getTime' in aVal && 'getTime' in bVal) {
+          const aDate = aVal as any
+          const bDate = bVal as any
           return sort.direction === "asc" 
-            ? aVal.getTime() - bVal.getTime() 
-            : bVal.getTime() - aVal.getTime()
+            ? aDate.getTime() - bDate.getTime() 
+            : bDate.getTime() - aDate.getTime()
         }
 
         if (typeof aVal === "string" && typeof bVal === "string") {

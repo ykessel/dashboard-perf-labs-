@@ -4,7 +4,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to modern color palette with emerald and slate tones */
   --background: oklch(1 0 0); /* #ffffff */
   --foreground: oklch(0.345 0.007 258.338); /* #475569 */
   --card: oklch(0.976 0.003 258.338); /* #f1f5f9 */
@@ -41,7 +40,6 @@
 }
 
 .dark {
-  /* Updated dark mode colors to complement the modern theme */
   --background: oklch(0.145 0.007 258.338); /* #1e293b */
   --foreground: oklch(0.976 0.003 258.338); /* #f1f5f9 */
   --card: oklch(0.205 0.007 258.338); /* #334155 */
@@ -124,23 +122,19 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Added smooth transitions for modern feel */
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Added glassmorphism effects for modern aesthetic */
   .glass-effect {
     backdrop-filter: blur(10px);
     background: var(--popover);
     border: 1px solid var(--border);
   }
 
-  /* Added subtle animations for interactive elements */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in-out;
   }
 
-  /* Smooth hover transitions for cards */
   .card-hover {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -150,7 +144,6 @@
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 
-  /* Improved scrollbar styling */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -181,7 +174,6 @@
     }
   }
 
-  /* Pulse animation for live indicators */
   @keyframes pulse {
     0%, 100% {
       opacity: 1;
@@ -195,7 +187,6 @@
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Enhanced checkbox visibility */
   [data-slot="checkbox"] {
     border-width: 2px;
   }
@@ -208,12 +199,10 @@
     box-shadow: 0 0 0 2px var(--primary);
   }
 
-  /* Checkbox container hover effect */
   .checkbox-container:hover [data-slot="checkbox"] {
     border-color: var(--primary);
   }
 
-  /* Table styling improvements */
   .data-table {
     border-collapse: separate;
     border-spacing: 0;
@@ -227,7 +216,6 @@
     z-index: 10;
   }
 
-  /* Ensure sticky header works properly */
   .data-table thead {
     position: sticky;
     top: 0;
@@ -235,7 +223,6 @@
     z-index: 10;
   }
 
-  /* Alternative row colors - more visible */
   .data-table tbody tr:nth-child(even) {
     background-color: hsl(var(--muted));
   }
@@ -244,7 +231,6 @@
     background-color: hsl(var(--background));
   }
 
-  /* Hover effect - primary color */
   .data-table tbody tr:hover {
     background-color: hsl(var(--primary) / 0.1) !important;
   }

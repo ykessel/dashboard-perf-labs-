@@ -144,7 +144,7 @@ function TableSearch({ value, onChange, placeholder = "Search...", className }: 
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-8 w-64"
+        className="pl-8 w-full sm:w-64"
       />
     </div>
   )
@@ -185,28 +185,26 @@ function TableColumnSelector<T>({ columns, visibleColumns, onColumnVisibilityCha
 // Table Pagination Component
 function TablePagination({ pagination, onPageChange, onItemsPerPageChange, className }: TablePaginationProps) {
   return (
-    <div className={cn("flex items-center justify-between p-6 border-t bg-muted/20", className)}>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Rows per page:</span>
-        <Select value={pagination.itemsPerPage.toString()} onValueChange={(value) => onItemsPerPageChange(Number(value))}>
-          <SelectTrigger className="w-20">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5</SelectItem>
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="20">20</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">
-          Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} total)
-        </span>
-        <div className="flex gap-1">
-          <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={pagination.currentPage === 1}>
+    <div className={cn("flex flex-col gap-4 p-4 sm:p-6 border-t bg-muted/20", className)}>
+      {/* Mobile: Stack vertically */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {/* Page info */}
+        <div className="flex items-center justify-center">
+          <span className="text-sm text-muted-foreground text-center">
+            Page {pagination.currentPage} of {pagination.totalPages}
+          </span>
+        </div>
+        
+        {/* Navigation buttons - mobile optimized */}
+        <div className="flex items-center justify-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onPageChange(1)} 
+            disabled={pagination.currentPage === 1}
+            className="px-3"
+            aria-label="Go to first page"
+          >
             First
           </Button>
           <Button
@@ -214,14 +212,18 @@ function TablePagination({ pagination, onPageChange, onItemsPerPageChange, class
             size="sm"
             onClick={() => onPageChange(pagination.currentPage - 1)}
             disabled={pagination.currentPage === 1}
+            className="px-3"
+            aria-label="Go to previous page"
           >
-            Previous
+            Prev
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPageChange(pagination.currentPage + 1)}
             disabled={pagination.currentPage === pagination.totalPages}
+            className="px-3"
+            aria-label="Go to next page"
           >
             Next
           </Button>
@@ -230,9 +232,90 @@ function TablePagination({ pagination, onPageChange, onItemsPerPageChange, class
             size="sm"
             onClick={() => onPageChange(pagination.totalPages)}
             disabled={pagination.currentPage === pagination.totalPages}
+            className="px-3"
+            aria-label="Go to last page"
           >
             Last
           </Button>
+        </div>
+        
+        {/* Rows per page - mobile */}
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-sm text-muted-foreground">Rows:</span>
+          <Select value={pagination.itemsPerPage.toString()} onValueChange={(value) => onItemsPerPageChange(Number(value))}>
+            <SelectTrigger className="w-16" aria-label="Select number of rows per page">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">({pagination.totalItems} total)</span>
+        </div>
+      </div>
+
+      {/* Desktop: Original horizontal layout */}
+      <div className="hidden sm:flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Rows per page:</span>
+          <Select value={pagination.itemsPerPage.toString()} onValueChange={(value) => onItemsPerPageChange(Number(value))}>
+            <SelectTrigger className="w-20" aria-label="Select number of rows per page">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} total)
+          </span>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onPageChange(1)} 
+              disabled={pagination.currentPage === 1}
+              aria-label="Go to first page"
+            >
+              First
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+              aria-label="Go to previous page"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
+              aria-label="Go to next page"
+            >
+              Next
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.totalPages)}
+              disabled={pagination.currentPage === pagination.totalPages}
+              aria-label="Go to last page"
+            >
+              Last
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -292,32 +375,32 @@ export function DataTable<T = any>({
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header with search and column selector */}
-      {(onSearchChange || showColumnSelector) && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {title && (
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-            </div>
-          )}
-          <div className="flex gap-3">
-            {onSearchChange && (
-              <TableSearch
-                value={searchTerm || ""}
-                onChange={onSearchChange}
-                placeholder={searchPlaceholder}
-              />
-            )}
-            {showColumnSelector && onColumnVisibilityChange && visibleColumns && (
-              <TableColumnSelector
-                columns={columns}
-                visibleColumns={visibleColumns}
-                onColumnVisibilityChange={onColumnVisibilityChange}
-              />
-            )}
-          </div>
-        </div>
-      )}
+             {/* Header with search and column selector */}
+       {(onSearchChange || showColumnSelector) && (
+         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+           {title && (
+             <div className="space-y-1">
+               <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+             </div>
+           )}
+           <div className="flex flex-col gap-3 sm:flex-row">
+             {onSearchChange && (
+               <TableSearch
+                 value={searchTerm || ""}
+                 onChange={onSearchChange}
+                 placeholder={searchPlaceholder}
+               />
+             )}
+             {showColumnSelector && onColumnVisibilityChange && visibleColumns && (
+               <TableColumnSelector
+                 columns={columns}
+                 visibleColumns={visibleColumns}
+                 onColumnVisibilityChange={onColumnVisibilityChange}
+               />
+             )}
+           </div>
+         </div>
+       )}
 
       {/* Table Card */}
       <Card className="border-0 shadow-sm">
@@ -328,25 +411,27 @@ export function DataTable<T = any>({
             {pagination && <span>({pagination.totalItems} entries)</span>}
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border rounded-md">
-            <table className={cn("w-full data-table", tableClassName)}>
-              <TableHeader
-                columns={displayColumns}
-                sort={sort}
-                onSort={onSort}
-                className={headerClassName}
-              />
-              <TableBody
-                data={data}
-                columns={displayColumns}
-                loading={loading}
-                rowClassName={rowClassName}
-                cellClassName={cellClassName}
-                getRowId={(row, index) => (row as any)._id || `row-${index}`}
-              />
-            </table>
-          </div>
+                 <CardContent className="pt-0">
+           <div className="overflow-x-auto max-h-[500px] overflow-y-auto border rounded-md">
+             <div className="min-w-full">
+               <table className={cn("w-full data-table", tableClassName)}>
+                 <TableHeader
+                   columns={displayColumns}
+                   sort={sort}
+                   onSort={onSort}
+                   className={headerClassName}
+                 />
+                 <TableBody
+                   data={data}
+                   columns={displayColumns}
+                   loading={loading}
+                   rowClassName={rowClassName}
+                   cellClassName={cellClassName}
+                   getRowId={(row, index) => (row as any)._id || `row-${index}`}
+                 />
+               </table>
+             </div>
+           </div>
 
           {/* Pagination */}
           {pagination && onPageChange && onItemsPerPageChange && (
