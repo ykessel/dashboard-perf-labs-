@@ -14,10 +14,10 @@ interface ConnectionStatusProps {
 export const ConnectionStatus = React.memo(function ConnectionStatus({ isConnected, hasError, className }: ConnectionStatusProps) {
   if (hasError) {
     return (
-      <Badge variant="destructive" className={cn("flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white border-red-700 min-w-[140px] justify-center", className)}>
+      <Badge variant="destructive" className={cn("flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white border-red-700", className)}>
         <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
         <AlertCircle className="h-3 w-3" />
-        <span className="min-w-[90px] text-center">Connection Error</span>
+        Connection Error
       </Badge>
     )
   }
@@ -26,7 +26,7 @@ export const ConnectionStatus = React.memo(function ConnectionStatus({ isConnect
     <Badge 
       variant={isConnected ? "default" : "secondary"} 
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 min-w-[90px] justify-center",
+        "flex items-center gap-1.5 px-3 py-1.5",
         isConnected 
           ? "bg-green-600 text-white border-green-700" 
           : "bg-gray-600 text-white border-gray-700",
@@ -38,9 +38,7 @@ export const ConnectionStatus = React.memo(function ConnectionStatus({ isConnect
         isConnected ? "bg-white animate-pulse" : "bg-gray-300"
       )}></div>
       {isConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-      <span className="min-w-[32px] text-center">
-        {isConnected ? "Live" : "Offline"}
-      </span>
+      {isConnected ? "Live" : "Offline"}
     </Badge>
   )
 })

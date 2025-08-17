@@ -46,30 +46,28 @@ export function TimelineChart() {
       </div>
 
       {/* Content area with consistent height */}
-      <div className="min-h-[600px] h-[600px]">
+      <div className="min-h-[500px]">
         {error ? (
-          <div className="flex h-full items-center justify-center text-destructive">
+          <div className="flex h-[400px] items-center justify-center text-destructive">
             <div className="text-center">
               <p className="font-medium">Error loading timeline data</p>
               <p className="text-sm text-muted-foreground">{error.message}</p>
             </div>
           </div>
         ) : loading ? (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex h-[400px] items-center justify-center">
             <LoadingState message="Loading timeline data..." />
           </div>
         ) : (
-          <div className="h-full">
-            <TimelineChartClient
-              initialData={data || []}
-              availableParameters={VALUES_KEY_LABELS}
-              selectedInterval={selectedInterval}
-              selectedParameter={selectedParameter}
-              onIntervalChange={setSelectedInterval}
-              onParameterChange={handleParameterChange}
-              loadedParameters={new Set([selectedParameter])}
-            />
-          </div>
+          <TimelineChartClient
+            initialData={data || []}
+            availableParameters={VALUES_KEY_LABELS}
+            selectedInterval={selectedInterval}
+            selectedParameter={selectedParameter}
+            onIntervalChange={setSelectedInterval}
+            onParameterChange={handleParameterChange}
+            loadedParameters={new Set([selectedParameter])}
+          />
         )}
       </div>
     </div>

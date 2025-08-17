@@ -145,7 +145,7 @@ export default function TimelineChartClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="h-[450px] min-h-[450px]">
+          <div className="h-[400px]">
             {!hasData ? (
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 No data available for {parameterLabel} in the selected date range.
