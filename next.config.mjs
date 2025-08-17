@@ -12,7 +12,8 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
-    optimizeCss: true,
+    // Remove optimizeCss to avoid critters issues in production
+    // optimizeCss: true,
     turbo: {
       rules: {
         '*.svg': {
@@ -24,6 +25,30 @@ const nextConfig = {
   },
   // Compression
   compress: true,
+  // Custom webpack configuration for CSS optimization
+  webpack: (config, { dev, isServer }) => {
+    // Only apply CSS optimization in production builds
+    if (!dev && !isServer) {
+      // Add CSS optimization plugins
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks.cacheGroups,
+            styles: {
+              name: 'styles',
+              test: /\.(css|scss)$/,
+              chunks: 'all',
+              enforce: true,
+            },
+          },
+        },
+      }
+    }
+    
+    return config
+  },
   // Headers for performance
   async headers() {
     return [
