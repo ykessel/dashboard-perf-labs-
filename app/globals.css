@@ -18,7 +18,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Optimize animations */
+/* Prevent forced reflows */
+.layout-stable {
+  contain: layout;
+}
+
+/* Optimize animations and transitions */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -27,6 +32,18 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Optimize for performance */
+.performance-optimized {
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prevent layout thrashing */
+.layout-thrash-prevention {
+  contain: layout style paint;
 }
 
 :root {

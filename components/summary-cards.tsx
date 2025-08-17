@@ -387,18 +387,18 @@ export const SummaryCards = React.memo(function SummaryCards() {
           <p>Selecciona al menos un parámetro para ver los datos</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 layout-stable">
           {displayParams.map((param: string) => {
           const metric = metrics.find((m) => m.parameter === param)
           const label = VALUES_KEY_LABELS[param]?.label || param
 
           return (
-            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm">
+            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm h-[120px] performance-optimized">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3">
                 <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate pr-2">{label}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between h-full">
                   <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
                     <p
                       className={cn(
