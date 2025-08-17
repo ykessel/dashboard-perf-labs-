@@ -1,4 +1,3 @@
-"use client"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { TimelineChart } from "@/components/timeline-chart"
 import type { DateRange } from "@/types/air-quality"

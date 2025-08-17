@@ -68,7 +68,7 @@ export function DataTable<T = any>({
               <h2 className="text-xl font-semibold text-foreground">{title}</h2>
             </div>
           )}
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:ml-auto">
             {onSearchChange && (
               <TableSearch
                 value={searchTerm || ""}
@@ -93,16 +93,6 @@ export function DataTable<T = any>({
           <CardTitle className="flex items-center gap-2">
             {titleIcon}
             {title && <span>{title}</span>}
-            {pagination && (
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-primary/10">
-                  <BarChart3 className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {pagination.totalItems} records
-                </span>
-              </div>
-            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">

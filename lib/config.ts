@@ -1,7 +1,7 @@
 export const config = {
   // WebSocket configuration
   websocket: {
-    url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || "http://localhost:3001",
+    url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || "https://api-challenge.dofleini.com",
   },
   
   // API configuration
@@ -11,6 +11,6 @@ export const config = {
   
   // Development settings
   development: {
-    enableWebSocket: process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true",
+    enableWebSocket: true, // Enable WebSocket by default since API supports it
   }
 }

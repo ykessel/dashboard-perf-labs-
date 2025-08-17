@@ -122,23 +122,23 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
       </div>
 
       {/* Data Table */}
-      <DataTable
-        data={paginatedData}
+    <DataTable
+      data={paginatedData}
         columns={tableColumns}
         loading={isLoading}
         error={error ? String(error) : null}
-        sort={sort}
-        onSort={handleSort}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onItemsPerPageChange={handleItemsPerPageChange}
-        searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
-        searchPlaceholder="Search data..."
-        visibleColumns={visibleColumns}
-        onColumnVisibilityChange={handleColumnVisibilityChange}
-        showColumnSelector={true}
+      sort={sort}
+      onSort={handleSort}
+      pagination={pagination}
+      onPageChange={handlePageChange}
+      onItemsPerPageChange={handleItemsPerPageChange}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchChange}
+      searchPlaceholder="Search data..."
+      visibleColumns={visibleColumns}
+      onColumnVisibilityChange={handleColumnVisibilityChange}
+      showColumnSelector={true}
       />
-    </div>
+        </div>
   )
 })

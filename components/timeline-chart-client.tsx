@@ -118,9 +118,6 @@ export default function TimelineChartClient({
               {Object.entries(availableParameters).map(([key, { label }]) => (
                 <SelectItem key={key} value={key}>
                   {label}
-                  {!loadedParameters.has(key) && (
-                    <span className="ml-2 text-xs text-muted-foreground">(Loading...)</span>
-                  )}
                 </SelectItem>
               ))}
             </SelectContent>

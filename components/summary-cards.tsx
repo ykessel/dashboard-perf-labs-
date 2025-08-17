@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { TrendingUp, TrendingDown, Minus, AlertCircle, Settings } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -10,49 +10,105 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionStatus } from "@/components/connection-status"
 import { OPERATORS, VALUES_KEY_LABELS } from "@/types/air-quality"
-import { useSocket } from "@/hooks/use-socket"
 import { useDashboard } from "@/components/dashboard-provider"
-import { useSummaryData } from "@/hooks/use-air-quality-queries"
+import { useUnifiedSocket } from "@/hooks/use-unified-socket"
 import { cn } from "@/lib/utils"
-import { config } from "@/lib/config"
 
 export const SummaryCards = React.memo(function SummaryCards() {
   const { dateRange } = useDashboard()
   const [operator, setOperator] = useState<OPERATORS>(OPERATORS.AVG)
   const [selectedParams, setSelectedParams] = useState<Set<string>>(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
+  const [previousValues, setPreviousValues] = useState<Record<string, number>>({})
+  
+  // Use ref to track if we've already processed the current data
+  const processedDataRef = useRef<{ socketData: any }>({ socketData: null })
 
-  // Real Socket.io connection
-  const { isConnected, data: socketData, error: socketError } = useSocket(
-    config.development.enableWebSocket ? config.websocket.url : undefined
-  )
-
-  // React Query hook for summary data
-  const { data: summaryData, isLoading, error, refetch } = useSummaryData(dateRange, operator)
+  // Socket.IO connection (real only)
+  const { 
+    isConnected, 
+    data: socketData, 
+    error: socketError, 
+    isSimulated,
+    simulateError 
+  } = useUnifiedSocket({
+    useSimulator: false, // Use real Socket.IO only
+    simulatorOptions: {
+      enabled: false,
+    }
+  })
 
   // All available parameters to display in cards
   const allParams = Object.keys(VALUES_KEY_LABELS)
   const displayParams = Array.from(selectedParams)
 
-  // Transform API data to our format with real-time updates
+  // Transform Socket.IO data to our format with real-time updates
   const metrics = useMemo(() => {
-    if (!summaryData) return []
+    if (!socketData) return []
 
     return displayParams.map((param: string) => {
-      let currentValue = summaryData[param] || 0
+      const currentValue = socketData[param] || 0
 
-      // Override with real-time data if available
-      if (socketData && socketData[param] !== undefined) {
-        currentValue = socketData[param]
-      }
+      // Calculate trend based on previous value
+      const previousValue = previousValues[param]
+      let trend: "up" | "down" | "neutral" = "neutral"
+      
+      if (previousValue !== undefined && Math.abs(currentValue - previousValue) > 0.001) {
+          trend = currentValue > previousValue ? "up" : "down"
+        }
 
-      return {
-        parameter: param,
-        value: currentValue,
-        trend: "neutral" as const, // Simplified for now
-        lastUpdated: new Date(),
+        return {
+          parameter: param,
+          value: currentValue,
+          previousValue,
+          trend,
+          lastUpdated: new Date(),
+        }
+      })
+  }, [socketData, displayParams, previousValues])
+
+  // Update previous values when data changes
+  useEffect(() => {
+    // Check if data has actually changed
+    const currentData = { socketData }
+    const previousData = processedDataRef.current
+    
+    if (currentData.socketData === previousData.socketData) {
+      return // No change, skip update
+    }
+    
+    // Update processed data ref
+    processedDataRef.current = currentData
+    
+    if (!socketData) return
+
+    setPreviousValues(prev => {
+      const newPreviousValues: Record<string, number> = {}
+      let hasChanges = false
+      
+      displayParams.forEach((param: string) => {
+        const currentValue = socketData[param] || 0
+        
+        // Only update if we have a current value and it's different from the previous
+        if (currentValue !== 0 || socketData[param] !== undefined) {
+          const previousValue = prev[param]
+          if (previousValue === undefined || Math.abs(currentValue - previousValue) > 0.001) {
+            newPreviousValues[param] = previousValue !== undefined ? previousValue : currentValue
+            hasChanges = true
+          }
+        }
+      })
+      
+      // Only update state if there are actual changes
+      if (hasChanges) {
+        return {
+          ...prev,
+          ...newPreviousValues
+        }
       }
+      
+      return prev
     })
-  }, [summaryData, socketData, displayParams])
+  }, [socketData, displayParams])
 
   const handleOperatorChange = (newOperator: string) => {
     const validOperator = newOperator as OPERATORS
@@ -84,6 +140,12 @@ export const SummaryCards = React.memo(function SummaryCards() {
     setSelectedParams(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
   }
 
+  const handleSimulateError = () => {
+    if (simulateError) {
+      simulateError('Simulated connection error for testing')
+    }
+  }
+
   const getTrendIcon = (trend: "up" | "down" | "neutral") => {
     switch (trend) {
       case "up":
@@ -98,55 +160,39 @@ export const SummaryCards = React.memo(function SummaryCards() {
   const getTrendColor = (trend: "up" | "down" | "neutral") => {
     switch (trend) {
       case "up":
-        return "text-green-600"
+        return "text-green-700 dark:text-green-400"
       case "down":
-        return "text-red-600"
+        return "text-red-700 dark:text-red-400"
       default:
-        return "text-card-foreground"
+        return "text-gray-900 dark:text-gray-100"
     }
   }
 
-  const getParameterColor = (param: string) => {
-    const colors = {
-      CO: "bg-primary",
-      PT08S1: "bg-blue-500",
-      NMHC: "bg-green-500",
-      C6H6: "bg-purple-500",
-      PT08S2: "bg-indigo-500",
-      NOx: "bg-orange-500",
-      PT08S3: "bg-pink-500",
-      NO2: "bg-secondary",
-      PT08S4: "bg-teal-500",
-      PT08S5: "bg-cyan-500",
-      T: "bg-accent",
-      RH: "bg-chart-3",
-      AH: "bg-yellow-500",
-    }
-    return colors[param as keyof typeof colors] || "bg-primary"
-  }
+  // Loading state when not connected
+  const isLoading = !isConnected
 
-  if (error && !socketError) {
+  if (socketError) {
     return (
       <div className="space-y-4">
         {/* Header Section - Mobile Optimized */}
         <div className="space-y-4">
           {/* Title and Info */}
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-foreground">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Environmental Metrics Summary 
-              <span className="text-sm font-normal text-muted-foreground ml-2">
+              <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
                 ({selectedParams.size} de {allParams.length} parámetros)
               </span>
             </h2>
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              🔄 Real-time data via WebSocket (updates every 2s)
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              🔄 Datos en tiempo real via WebSocket
             </p>
           </div>
 
           {/* Controls - Mobile Stacked, Desktop Horizontal */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Connection Status - Always visible */}
-            <div className="flex items-center justify-center sm:justify-start">
+            {/* Connection Status */}
+            <div className="flex items-center justify-center sm:justify-start gap-3">
               <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
             </div>
 
@@ -228,7 +274,9 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error.message}</AlertDescription>
+          <AlertDescription>
+            {String(socketError)}
+          </AlertDescription>
         </Alert>
       </div>
     )
@@ -240,21 +288,21 @@ export const SummaryCards = React.memo(function SummaryCards() {
       <div className="space-y-4">
         {/* Title and Info */}
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             Environmental Metrics Summary
           </h2>
           <p className="text-sm text-muted-foreground">
             {selectedParams.size} de {allParams.length} parámetros seleccionados
           </p>
-          <p className="text-xs text-blue-600 dark:text-blue-400">
-            🔄 Real-time data via WebSocket (updates every 2s)
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            🔄 Datos en tiempo real via WebSocket
           </p>
         </div>
 
         {/* Controls - Mobile Stacked, Desktop Horizontal */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Connection Status - Always visible */}
-          <div className="flex items-center justify-center sm:justify-start">
+          {/* Connection Status */}
+          <div className="flex items-center justify-center sm:justify-start gap-3">
             <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
           </div>
 
@@ -335,7 +383,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
       </div>
 
       {displayParams.length === 0 ? (
-        <div className="flex h-32 items-center justify-center text-muted-foreground">
+        <div className="flex h-32 items-center justify-center text-gray-600 dark:text-gray-400">
           <p>Selecciona al menos un parámetro para ver los datos</p>
         </div>
       ) : (
@@ -347,17 +395,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
           return (
             <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate pr-2">{label}</CardTitle>
-                <div
-                  className={cn(
-                    "h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0",
-                    `${getParameterColor(param)}/10`,
-                  )}
-                >
-                  <div
-                    className={cn("h-3 w-3 sm:h-4 sm:w-4 rounded-full transition-all duration-300", getParameterColor(param))}
-                  ></div>
-                </div>
+                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate pr-2">{label}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
@@ -366,17 +404,15 @@ export const SummaryCards = React.memo(function SummaryCards() {
                       className={cn(
                         "text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 truncate",
                         isLoading ? "text-muted-foreground" : getTrendColor(metric?.trend || "neutral"),
+                        metric?.trend !== "neutral" && "animate-pulse"
                       )}
                     >
                       {isLoading ? "--" : metric?.value?.toFixed(2) || "0.00"}
                     </p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary w-fit">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white w-fit">
                         {operator}
                       </span>
-                      {metric?.lastUpdated && (
-                        <p className="text-xs text-muted-foreground">{metric.lastUpdated.toLocaleTimeString()}</p>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
@@ -390,9 +426,9 @@ export const SummaryCards = React.memo(function SummaryCards() {
               {/* Enhanced loading indicator */}
               {isLoading && (
                 <div className="absolute inset-0 bg-card/80 backdrop-blur-sm flex items-center justify-center">
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    <span className="text-sm">Updating...</span>
+                    <span className="text-sm">Connecting...</span>
                   </div>
                 </div>
               )}
@@ -400,7 +436,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
               {metric && metric.trend !== "neutral" && !isLoading && (
                 <div
                   className={cn(
-                    "absolute top-2 right-2 h-2 w-2 rounded-full animate-pulse",
+                    "absolute top-2 right-2 h-3 w-3 rounded-full animate-pulse shadow-sm",
                     metric.trend === "up" ? "bg-green-500" : "bg-red-500",
                   )}
                 />
@@ -409,13 +445,6 @@ export const SummaryCards = React.memo(function SummaryCards() {
           )
         })}
         </div>
-      )}
-
-      {socketError && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>WebSocket connection error: {socketError}. Real-time updates unavailable.</AlertDescription>
-        </Alert>
       )}
     </div>
   )
