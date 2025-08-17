@@ -1,16 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { useDataTable } from "@/hooks/use-data-table"
-import { VALUES_KEY_LABELS, type DateRange } from "@/types/air-quality"
-import { format, parseISO } from "date-fns"
+import { VALUES_KEY_LABELS } from "@/types/air-quality"
+import { useDashboard } from "@/components/dashboard-provider"
+import { useRangeData } from "@/hooks/use-air-quality-queries"
 import { BarChart3 } from "lucide-react"
 import type { TableColumn } from "@/types/table"
-
-interface HistoricalDataTableProps {
-  dateRange: DateRange
-}
 
 interface TableRow {
   date: string
@@ -18,108 +15,13 @@ interface TableRow {
   [key: string]: string | number
 }
 
-export const HistoricalDataTable = React.memo(function HistoricalDataTable({ dateRange }: HistoricalDataTableProps) {
-  const [data, setData] = useState<TableRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
+  const { dateRange } = useDashboard()
+  
+  // React Query hook for range data
+  const { data, isLoading, error } = useRangeData(dateRange)
 
-  // Define columns configuration
-  const columns: TableColumn<TableRow>[] = [
-    {
-      key: "date",
-      label: "Date",
-      sortable: true,
-      formatter: (value) => {
-        try {
-          const dateValue = typeof value === "string" ? value : value.toString()
-          return format(parseISO(dateValue), "MMM dd, yyyy")
-        } catch (error) {
-          console.error("Error parsing date:", value, error)
-          return value.toString()
-        }
-      }
-    },
-    {
-      key: "CO",
-      label: VALUES_KEY_LABELS.CO?.label || "CO",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "NO2",
-      label: VALUES_KEY_LABELS.NO2?.label || "NO2",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "T",
-      label: VALUES_KEY_LABELS.T?.label || "T",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "RH",
-      label: VALUES_KEY_LABELS.RH?.label || "RH",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "PT08S1",
-      label: VALUES_KEY_LABELS.PT08S1?.label || "PT08S1",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "NMHC",
-      label: VALUES_KEY_LABELS.NMHC?.label || "NMHC",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "C6H6",
-      label: VALUES_KEY_LABELS.C6H6?.label || "C6H6",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "PT08S2",
-      label: VALUES_KEY_LABELS.PT08S2?.label || "PT08S2",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "NOx",
-      label: VALUES_KEY_LABELS.NOx?.label || "NOx",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "PT08S3",
-      label: VALUES_KEY_LABELS.PT08S3?.label || "PT08S3",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "PT08S4",
-      label: VALUES_KEY_LABELS.PT08S4?.label || "PT08S4",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "PT08S5",
-      label: VALUES_KEY_LABELS.PT08S5?.label || "PT08S5",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    },
-    {
-      key: "AH",
-      label: VALUES_KEY_LABELS.AH?.label || "AH",
-      sortable: true,
-      formatter: (value) => typeof value === "number" ? value.toFixed(2) : String(value)
-    }
-  ]
-
-  // Use the data table hook
+  // Data table configuration
   const {
     paginatedData,
     sort,
@@ -131,91 +33,121 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable({ dat
     handleSearchChange,
     visibleColumns,
     handleColumnVisibilityChange,
-    setVisibleColumns
+    setVisibleColumns,
   } = useDataTable({
-    data,
+    data: data || [],
+    initialSort: { column: "date", direction: "desc" },
+    initialPage: 1,
     initialItemsPerPage: 10,
     searchable: true,
     sortable: true,
     pagination: true,
-    getRowId: (row) => row._id
   })
 
+  // Generate columns dynamically based on available data
+  const tableColumns = useMemo(() => {
+    if (!data || data.length === 0) return []
+
+    const baseColumns: TableColumn<TableRow>[] = [
+      {
+        key: "date",
+        label: "Date",
+        sortable: true,
+        render: (value) => {
+          try {
+            const date = new Date(value as string)
+            return date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          } catch {
+            return value as string
+          }
+        },
+      },
+    ]
+
+    // Add parameter columns dynamically
+    const parameterColumns: TableColumn<TableRow>[] = Object.entries(VALUES_KEY_LABELS).map(([key, { label }]) => ({
+      key,
+      label,
+      sortable: true,
+      render: (value) => {
+        if (typeof value === "number") {
+          return value.toFixed(2)
+        }
+        return value as string
+      },
+    }))
+
+    return [...baseColumns, ...parameterColumns]
+  }, [data])
+
   // Initialize visible columns
-  useEffect(() => {
+  React.useEffect(() => {
     setVisibleColumns(new Set(["date", "CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
   }, [setVisibleColumns])
 
-  const fetchHistoricalData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const fromDate = dateRange.from.toISOString().split("T")[0]
-      const toDate = dateRange.to.toISOString().split("T")[0]
-
-      const response = await fetch(`/api/air-quality/range?from=${fromDate}&to=${toDate}`)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `API Error: ${response.status} - ${response.statusText}`)
-      }
-
-      const apiData = await response.json()
-
-      // Transform API data to table format
-      const transformedData: TableRow[] = Array.isArray(apiData) 
-        ? apiData.map((item, index) => ({
-            date: item.Date, // Use the correct field name from API
-            _id: item._id || `row-${index}`, // Ensure unique ID
-            ...item,
-          }))
-        : Object.entries(apiData).map(([date, values], index) => ({
-            date,
-            _id: `row-${index}`, // Generate unique ID for object format
-            ...(values as Record<string, number>),
-          }))
-
-      // Remove duplicates based on _id and sort by date
-      const uniqueData = transformedData.filter((item, index, self) => 
-        index === self.findIndex(t => t._id === item._id)
-      )
-      setData(uniqueData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()))
-    } catch (err) {
-      console.error("Error fetching historical data:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch historical data")
-    } finally {
-      setLoading(false)
-    }
+  if (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold text-foreground">Historical Data</h2>
+            <p className="text-sm text-muted-foreground">
+              Detailed air quality measurements over time
+            </p>
+          </div>
+        </div>
+        <div className="flex h-[400px] items-center justify-center text-destructive">
+          Error: {errorMessage}
+        </div>
+      </div>
+    )
   }
 
-  useEffect(() => {
-    fetchHistoricalData()
-  }, [dateRange])
-
   return (
-    <DataTable
-      data={paginatedData}
-      columns={columns}
-      loading={loading}
-      error={error}
-      sort={sort}
-      onSort={handleSort}
-      pagination={pagination}
-      onPageChange={handlePageChange}
-      onItemsPerPageChange={handleItemsPerPageChange}
-      searchTerm={searchTerm}
-      onSearchChange={handleSearchChange}
-      searchPlaceholder="Search data..."
-      visibleColumns={visibleColumns}
-      onColumnVisibilityChange={handleColumnVisibilityChange}
-      showColumnSelector={true}
-      title="Historical Data"
-      titleIcon={
-        <div className="p-1.5 rounded-md bg-primary/10">
-          <BarChart3 className="h-4 w-4 text-primary" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold text-foreground">Historical Data</h2>
+          <p className="text-sm text-muted-foreground">
+            Detailed air quality measurements over time
+          </p>
         </div>
-      }
-    />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-primary/10">
+            <BarChart3 className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-sm text-muted-foreground">
+            {pagination.totalItems} records
+          </span>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <DataTable
+        data={paginatedData}
+        columns={tableColumns}
+        loading={isLoading}
+        error={error?.message || null}
+        sort={sort}
+        onSort={handleSort}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onItemsPerPageChange={handleItemsPerPageChange}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search data..."
+        visibleColumns={visibleColumns}
+        onColumnVisibilityChange={handleColumnVisibilityChange}
+        showColumnSelector={true}
+      />
+    </div>
   )
 })
