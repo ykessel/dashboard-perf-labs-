@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "Cookie": "AWSALB=JGHBe5fSSlnnPkz4uUaEBhMq+1SyTiiP1B5rHV6U6ATjUoMobkDtYGL6P6zz6wWqzC41i3yGM5X3g1ucGh0irNU4S56cXccnxHv+I9ryYZde8esRZlJlc45Ua+sN; AWSALBCORS=JGHBe5fSSlnnPkz4uUaEBhMq+1SyTiiP1B5rHV6U6ATjUoMobkDtYGL6P6zz6wWqzC41i3yGM5X3g1ucGh0irNU4S56cXccnxHv+I9ryYZde8esRZlJlc45Ua+sN; AWSALB=5K9ymwaiwA940cWqKcV72dwh3PQmR2Gelddb73m66dNxTj2txNCE/VwrxJbz6TDROU6cDwFdvoHrhrj9KpUjEV4EXsKLQ8vzo3MM3gT/rQPZXmndebsfpRJ/pfGc; AWSALBCORS=5K9ymwaiwA940cWqKcV72dwh3PQmR2Gelddb73m66dNxTj2txNCE/VwrxJbz6TDROU6cDwFdvoHrhrj9KpUjEV4EXsKLQ8vzo3MM3gT/rQPZXmndebsfpRJ/pfGc",
       },
       next: { revalidate: 300 } // Cache for 5 minutes
     })
@@ -31,7 +30,13 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
-    return NextResponse.json(data)
+    // Return response with optimized headers
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+        'Content-Type': 'application/json',
+      }
+    })
   } catch (error) {
     console.error("Summary API Error:", error)
     return NextResponse.json(

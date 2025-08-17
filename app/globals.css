@@ -3,6 +3,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 :root {
   --background: oklch(1 0 0); /* #ffffff */
   --foreground: oklch(0.345 0.007 258.338); /* #475569 */
@@ -75,9 +101,9 @@
 }
 
 @theme inline {
-  /* Updated font configuration for DM Sans */
-  --font-sans: var(--font--sans);
-  --font-mono: var(--font-geist-mono);
+  /* Updated font configuration for DM Sans only */
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-dm-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

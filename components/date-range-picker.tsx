@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Calendar, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -121,7 +122,7 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
   )
 }
 
-export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
+export const DateRangePicker = React.memo(function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
   const {
     isCalendarOpen,
     setIsCalendarOpen,
@@ -213,4 +214,4 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
       </Popover>
     </div>
   )
-}
+})

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Wifi, WifiOff, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -10,7 +11,7 @@ interface ConnectionStatusProps {
   className?: string
 }
 
-export function ConnectionStatus({ isConnected, hasError, className }: ConnectionStatusProps) {
+export const ConnectionStatus = React.memo(function ConnectionStatus({ isConnected, hasError, className }: ConnectionStatusProps) {
   if (hasError) {
     return (
       <Badge variant="destructive" className={cn("flex items-center gap-1.5 px-3 py-1.5", className)}>
@@ -28,4 +29,4 @@ export function ConnectionStatus({ isConnected, hasError, className }: Connectio
       {isConnected ? "Live" : "Offline"}
     </Badge>
   )
-}
+})

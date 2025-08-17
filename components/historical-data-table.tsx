@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { useDataTable } from "@/hooks/use-data-table"
 import { VALUES_KEY_LABELS, type DateRange } from "@/types/air-quality"
@@ -18,7 +18,7 @@ interface TableRow {
   [key: string]: string | number
 }
 
-export function HistoricalDataTable({ dateRange }: HistoricalDataTableProps) {
+export const HistoricalDataTable = React.memo(function HistoricalDataTable({ dateRange }: HistoricalDataTableProps) {
   const [data, setData] = useState<TableRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -218,4 +218,4 @@ export function HistoricalDataTable({ dateRange }: HistoricalDataTableProps) {
       }
     />
   )
-}
+})

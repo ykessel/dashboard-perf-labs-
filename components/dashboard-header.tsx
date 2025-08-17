@@ -1,3 +1,4 @@
+import React from "react"
 import { Activity } from "lucide-react"
 import type { DateRange } from "@/types/air-quality"
 import { DateRangePicker } from "./date-range-picker"
@@ -7,7 +8,7 @@ interface DashboardHeaderProps {
   onDateRangeChange: (range: DateRange) => void
 }
 
-export function DashboardHeader({ dateRange, onDateRangeChange }: DashboardHeaderProps) {
+export const DashboardHeader = React.memo(function DashboardHeader({ dateRange, onDateRangeChange }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container mx-auto px-6 py-6 max-w-7xl">
@@ -32,4 +33,4 @@ export function DashboardHeader({ dateRange, onDateRangeChange }: DashboardHeade
       </div>
     </header>
   )
-}
+})

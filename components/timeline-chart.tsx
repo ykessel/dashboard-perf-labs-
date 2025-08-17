@@ -1,13 +1,24 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from "recharts"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
+import dynamic from "next/dynamic"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, TrendingUp } from "lucide-react"
 import { VALUES_KEY_LABELS, INTERVALS, type DateRange } from "@/types/air-quality"
 import { format, parseISO, differenceInDays, differenceInMonths } from "date-fns"
+
+// Dynamically import Recharts to reduce initial bundle size
+const LineChart = dynamic(() => import("recharts").then(mod => ({ default: mod.LineChart })), { ssr: false })
+const Line = dynamic(() => import("recharts").then(mod => ({ default: mod.Line })), { ssr: false })
+const XAxis = dynamic(() => import("recharts").then(mod => ({ default: mod.XAxis })), { ssr: false })
+const YAxis = dynamic(() => import("recharts").then(mod => ({ default: mod.YAxis })), { ssr: false })
+const CartesianGrid = dynamic(() => import("recharts").then(mod => ({ default: mod.CartesianGrid })), { ssr: false })
+const Tooltip = dynamic(() => import("recharts").then(mod => ({ default: mod.Tooltip })), { ssr: false })
+const Legend = dynamic(() => import("recharts").then(mod => ({ default: mod.Legend })), { ssr: false })
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => ({ default: mod.ResponsiveContainer })), { ssr: false })
+const Brush = dynamic(() => import("recharts").then(mod => ({ default: mod.Brush })), { ssr: false })
 
 interface TimelineChartProps {
   dateRange: DateRange
@@ -19,7 +30,7 @@ interface ChartDataPoint {
   formattedDate: string
 }
 
-export function TimelineChart({ dateRange }: TimelineChartProps) {
+export const TimelineChart = React.memo(function TimelineChart({ dateRange }: TimelineChartProps) {
   const [selectedParameter, setSelectedParameter] = useState<string>("CO")
   const [selectedInterval, setSelectedInterval] = useState<INTERVALS>(INTERVALS.DAILY)
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
@@ -43,7 +54,7 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
     setSelectedInterval(autoInterval)
   }, [autoInterval])
 
-  const fetchTimelineData = async () => {
+  const fetchTimelineData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -84,13 +95,13 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedParameter, selectedInterval, dateRange])
 
   useEffect(() => {
     fetchTimelineData()
-  }, [selectedParameter, selectedInterval, dateRange])
+  }, [fetchTimelineData])
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = useCallback(({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
@@ -99,172 +110,130 @@ export function TimelineChart({ dateRange }: TimelineChartProps) {
           <p className="text-sm text-muted-foreground">
             {VALUES_KEY_LABELS[selectedParameter]?.label}: {payload[0].value?.toFixed(2)}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Interval: {selectedInterval}
-          </p>
         </div>
       )
     }
     return null
-  }
+  }, [selectedParameter])
 
-  const getParameterColor = () => {
-    const colors = {
-      CO: "#15803d",
-      PT08S1: "#84cc16",
-      NMHC: "#059669",
-      C6H6: "#0d9488",
-      PT08S2: "#0891b2",
-      NOx: "#0284c7",
-      PT08S3: "#3b82f6",
-      NO2: "#6366f1",
-      PT08S4: "#8b5cf6",
-      PT08S5: "#a855f7",
-      T: "#d946ef",
-      RH: "#ec4899",
-      AH: "#f43f5e",
-    }
-    return colors[selectedParameter as keyof typeof colors] || "#15803d"
+  // Memoize chart configuration to prevent unnecessary re-renders
+  const chartConfig = useMemo(() => ({
+    [selectedParameter]: {
+      label: VALUES_KEY_LABELS[selectedParameter]?.label || selectedParameter,
+      color: "#3b82f6",
+    },
+  }), [selectedParameter])
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Timeline Chart
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96 animate-pulse bg-muted rounded-lg" />
+        </CardContent>
+      </Card>
+    )
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
-          <div className="flex gap-2">
-            <Select value={selectedParameter} onValueChange={setSelectedParameter}>
-              <SelectTrigger className="w-48" aria-label="Select air quality parameter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(VALUES_KEY_LABELS).map(([key, { label }]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as INTERVALS)}>
-              <SelectTrigger className="w-32" aria-label="Select time interval">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={INTERVALS.DAILY}>Daily</SelectItem>
-                <SelectItem value={INTERVALS.MONTHLY}>Monthly</SelectItem>
-                <SelectItem value={INTERVALS.YEARLY}>Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Timeline Chart
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
-          <p className="text-sm text-muted-foreground">
-            Visualize parameter trends over time with interactive controls
-          </p>
-        </div>
-        <div className="flex gap-3">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Timeline Chart
+        </CardTitle>
+        <div className="flex flex-wrap gap-4">
           <Select value={selectedParameter} onValueChange={setSelectedParameter}>
-            <SelectTrigger className="w-48" aria-label="Select air quality parameter">
-              <SelectValue />
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select parameter" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(VALUES_KEY_LABELS).map(([key, { label }]) => (
+              {Object.entries(VALUES_KEY_LABELS).map(([key, value]) => (
                 <SelectItem key={key} value={key}>
-                  {label}
+                  {value.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as INTERVALS)}>
-            <SelectTrigger className="w-32" aria-label="Select time interval">
+            <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={INTERVALS.DAILY}>Daily</SelectItem>
-              <SelectItem value={INTERVALS.MONTHLY}>Monthly</SelectItem>
-              <SelectItem value={INTERVALS.YEARLY}>Yearly</SelectItem>
+              {Object.entries(INTERVALS).map(([key, value]) => (
+                <SelectItem key={key} value={value}>
+                  {key}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-primary/10">
-              <TrendingUp className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex flex-col">
-              <span>{VALUES_KEY_LABELS[selectedParameter]?.label} Timeline</span>
-              <span className="text-sm font-normal text-muted-foreground">
-                Interval: {selectedInterval.charAt(0).toUpperCase() + selectedInterval.slice(1)}
-              </span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {loading ? (
-            <div className="flex h-[400px] items-center justify-center">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                Loading {selectedInterval} data for {VALUES_KEY_LABELS[selectedParameter]?.label}...
-              </div>
-            </div>
-          ) : chartData.length === 0 ? (
-            <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-              No data available for the selected period
-            </div>
-          ) : (
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(value) => format(parseISO(value), "MMM dd")}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis tickFormatter={(value) => value.toFixed(1)} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={getParameterColor()}
-                    strokeWidth={2}
-                    dot={{ fill: getParameterColor(), strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: getParameterColor(), strokeWidth: 2 }}
-                    name={VALUES_KEY_LABELS[selectedParameter]?.label}
-                  />
-                  {/* Brush for zoom functionality */}
-                  <Brush
-                    dataKey="date"
-                    height={30}
-                    stroke={getParameterColor()}
-                    tickFormatter={(value) => format(parseISO(value), "MMM dd")}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      </CardHeader>
+      <CardContent>
+        {chartData.length > 0 ? (
+          <div className="h-96 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="formattedDate" 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => value.toFixed(2)}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: "#3b82f6", strokeWidth: 2 }}
+                />
+                <Brush dataKey="formattedDate" height={30} stroke="#3b82f6" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="flex h-96 items-center justify-center text-muted-foreground">
+            No data available for the selected parameters
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
-}
+})

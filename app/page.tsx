@@ -1,10 +1,25 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, lazy } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { SummaryCards } from "@/components/summary-cards"
-import { TimelineChart } from "@/components/timeline-chart"
-import { HistoricalDataTable } from "@/components/historical-data-table"
+import dynamic from "next/dynamic"
+
+// Dynamic imports to reduce initial bundle size
+const SummaryCards = dynamic(() => import("@/components/summary-cards").then(mod => ({ default: mod.SummaryCards })), {
+  loading: () => <div className="h-64 animate-pulse bg-muted rounded-lg" />,
+  ssr: false,
+})
+
+const TimelineChart = dynamic(() => import("@/components/timeline-chart").then(mod => ({ default: mod.TimelineChart })), {
+  loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
+  ssr: false,
+})
+
+const HistoricalDataTable = dynamic(() => import("@/components/historical-data-table").then(mod => ({ default: mod.HistoricalDataTable })), {
+  loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
+  ssr: false,
+})
+
 import type { DateRange } from "@/types/air-quality"
 
 // Default date range for initial load
@@ -25,21 +40,21 @@ export default function Dashboard() {
         <div className="space-y-8">
           {/* Summary Cards Section */}
           <section className="space-y-6">
-            <Suspense fallback={<div>Loading summary cards...</div>}>
+            <Suspense fallback={<div className="h-64 animate-pulse bg-muted rounded-lg" />}>
               <SummaryCards dateRange={dateRange} />
             </Suspense>
           </section>
 
           {/* Chart Section */}
           <section className="space-y-6">
-            <Suspense fallback={<div>Loading timeline chart...</div>}>
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
               <TimelineChart dateRange={dateRange} />
             </Suspense>
           </section>
 
           {/* Table Section */}
           <section className="space-y-6">
-            <Suspense fallback={<div>Loading data table...</div>}>
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
               <HistoricalDataTable dateRange={dateRange} />
             </Suspense>
           </section>
