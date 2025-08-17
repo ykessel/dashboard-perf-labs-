@@ -1,12 +1,34 @@
 "use client"
-import { useState, useCallback } from "react"
+import { useState, useCallback, Suspense } from "react"
 import { VALUES_KEY_LABELS, INTERVALS } from "@/types/air-quality"
 import TimelineChartClient from "@/components/timeline-chart-client"
 import { useDashboard } from "./dashboard-provider"
 import { useTimelineData, usePrefetchTimelineData } from "@/hooks/use-air-quality-queries"
 import { LoadingState } from "@/components/ui/loading-spinner"
 
-export function TimelineChart() {
+// Loading fallback component
+function TimelineLoadingFallback() {
+  return (
+    <div className="flex h-[400px] items-center justify-center">
+      <LoadingState message="Loading timeline data..." />
+    </div>
+  )
+}
+
+// Error fallback component
+function TimelineErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="flex h-[400px] items-center justify-center text-destructive">
+      <div className="text-center">
+        <p className="font-medium">Error loading timeline data</p>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
+      </div>
+    </div>
+  )
+}
+
+// Main timeline content component
+function TimelineContent() {
   const { dateRange } = useDashboard()
   const [selectedInterval, setSelectedInterval] = useState<INTERVALS>(INTERVALS.MONTHLY)
   const [selectedParameter, setSelectedParameter] = useState<string>("CO")
@@ -33,7 +55,34 @@ export function TimelineChart() {
     })
   }, [dateRange, selectedInterval, prefetchMutation])
 
-  // Always render the same container structure to prevent layout shift
+  // Show error if there is one
+  if (error) {
+    throw error
+  }
+
+  // Show loading if still loading
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <LoadingState message="Loading timeline data..." />
+      </div>
+    )
+  }
+
+  return (
+    <TimelineChartClient
+      initialData={data || []}
+      availableParameters={VALUES_KEY_LABELS}
+      selectedInterval={selectedInterval}
+      selectedParameter={selectedParameter}
+      onIntervalChange={setSelectedInterval}
+      onParameterChange={handleParameterChange}
+      loadedParameters={new Set([selectedParameter])}
+    />
+  )
+}
+
+export function TimelineChart() {
   return (
     <div className="space-y-6">
       {/* Header - Always present */}
@@ -46,27 +95,11 @@ export function TimelineChart() {
         </div>
       </div>
 
-      {/* Content area with consistent height */}
+      {/* Content area with Suspense and Error Boundary */}
       <div className="min-h-[500px]">
-        {loading ? (
-          <div className="flex h-[400px] items-center justify-center">
-            <LoadingState message="Loading timeline data..." />
-          </div>
-        ) : error ? (
-          <div className="flex h-[400px] items-center justify-center text-destructive">
-            Error: {error.message}
-          </div>
-        ) : (
-          <TimelineChartClient
-            initialData={data || []}
-            availableParameters={VALUES_KEY_LABELS}
-            selectedInterval={selectedInterval}
-            selectedParameter={selectedParameter}
-            onIntervalChange={setSelectedInterval}
-            onParameterChange={handleParameterChange}
-            loadedParameters={new Set([selectedParameter])} // React Query handles caching
-          />
-        )}
+        <Suspense fallback={<TimelineLoadingFallback />}>
+          <TimelineContent />
+        </Suspense>
       </div>
     </div>
   )
