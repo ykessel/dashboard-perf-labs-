@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/providers/query-provider"
 import { HistoricalDataTable } from "@/components/historical-data-table"
 import { SummaryCards } from "@/components/summary-cards"
 import type { DateRange } from "@/types/air-quality"
+import { LayoutStable } from "@/components/ui/layout-stable"
 
 
 // Default date range for initial load
@@ -19,24 +20,24 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <DashboardProvider defaultDateRange={defaultDateRange}>
           <DashboardHeader />
-          
+
           <main className="container mx-auto px-6 py-8 max-w-7xl">
             <div className="space-y-8">
 
               {/* Summary Cards Section */}
-              <section className="space-y-6">
+              <LayoutStable minHeight={200} className="space-y-6">
                 <SummaryCards />
-              </section>
+              </LayoutStable>
 
               {/* Timeline Chart Section */}
-              <section className="space-y-6">
+              <LayoutStable height={650} className="space-y-6">
                 <TimelineChart />
-              </section>
+              </LayoutStable>
 
               {/* Table Section */}
-              <section className="space-y-6">
+              <LayoutStable height={650} className="space-y-6">
                 <HistoricalDataTable />
-              </section>
+              </LayoutStable>
             </div>
           </main>
         </DashboardProvider>

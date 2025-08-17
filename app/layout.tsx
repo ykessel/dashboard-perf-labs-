@@ -68,11 +68,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="dns-prefetch" href="https://api-challenge.dofleini.com" />
-        
-        {/* Preload critical resources */}
-        <link rel="preload" href="/api/air-quality/summary" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/api/air-quality/timeline" as="fetch" crossOrigin="anonymous" />
-    
       </head>
       <body className="font-sans antialiased min-h-screen bg-background text-foreground">{children}</body>
     </html>

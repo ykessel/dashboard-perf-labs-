@@ -104,9 +104,9 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
       </div>
 
       {/* Content area with consistent height */}
-      <div className="min-h-[500px]">
+      <div className="min-h-[600px] h-[600px]">
         {error ? (
-          <div className="flex h-[400px] items-center justify-center text-destructive">
+          <div className="flex h-full items-center justify-center text-destructive">
             <div className="text-center">
               <p className="font-medium">Error loading data</p>
               <p className="text-sm text-muted-foreground">
@@ -115,27 +115,29 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
             </div>
           </div>
         ) : isLoading ? (
-          <div className="flex h-[400px] items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <LoadingState message="Loading historical data..." />
           </div>
         ) : (
-          <DataTable
-            data={paginatedData}
-            columns={tableColumns}
-            loading={isLoading}
-            error={error ? String(error) : null}
-            sort={sort}
-            onSort={handleSort}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            searchPlaceholder="Search data..."
-            visibleColumns={visibleColumns}
-            onColumnVisibilityChange={handleColumnVisibilityChange}
-            showColumnSelector={true}
-          />
+          <div className="h-full">
+            <DataTable
+              data={paginatedData}
+              columns={tableColumns}
+              loading={isLoading}
+              error={error ? String(error) : null}
+              sort={sort}
+              onSort={handleSort}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              searchTerm={searchTerm}
+              onSearchChange={handleSearchChange}
+              searchPlaceholder="Search data..."
+              visibleColumns={visibleColumns}
+              onColumnVisibilityChange={handleColumnVisibilityChange}
+              showColumnSelector={true}
+            />
+          </div>
         )}
       </div>
     </div>

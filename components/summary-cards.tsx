@@ -13,6 +13,7 @@ import { OPERATORS, VALUES_KEY_LABELS } from "@/types/air-quality"
 import { useDashboard } from "@/components/dashboard-provider"
 import { useUnifiedSocket } from "@/hooks/use-unified-socket"
 import { cn } from "@/lib/utils"
+import { StableGrid, Skeleton } from "@/components/ui/layout-stable"
 
 export const SummaryCards = React.memo(function SummaryCards() {
   const { dateRange } = useDashboard()
@@ -387,13 +388,17 @@ export const SummaryCards = React.memo(function SummaryCards() {
           <p>Selecciona al menos un parámetro para ver los datos</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 layout-stable">
+        <StableGrid 
+          minWidth={280} 
+          gap={16}
+          className="layout-stable"
+        >
           {displayParams.map((param: string) => {
           const metric = metrics.find((m) => m.parameter === param)
           const label = VALUES_KEY_LABELS[param]?.label || param
 
           return (
-            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm h-[120px] performance-optimized">
+            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm h-[140px] min-h-[140px] performance-optimized">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3">
                 <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate pr-2">{label}</CardTitle>
               </CardHeader>
@@ -402,12 +407,16 @@ export const SummaryCards = React.memo(function SummaryCards() {
                   <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
                     <p
                       className={cn(
-                        "text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 truncate",
+                        "text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-all duration-300 truncate min-h-[2rem] flex items-center",
                         isLoading ? "text-muted-foreground" : getTrendColor(metric?.trend || "neutral"),
                         metric?.trend !== "neutral" && "animate-pulse"
                       )}
                     >
-                      {isLoading ? "--" : metric?.value?.toFixed(2) || "0.00"}
+                      {isLoading ? (
+                        <Skeleton width={64} height={24} />
+                      ) : (
+                        metric?.value?.toFixed(2) || "0.00"
+                      )}
                     </p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white w-fit">
@@ -444,7 +453,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
             </Card>
           )
         })}
-        </div>
+        </StableGrid>
       )}
     </div>
   )
