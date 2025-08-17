@@ -210,7 +210,7 @@ export const LazyChart = React.memo(function LazyChart({
   }), [data, selectedParameter, selectedInterval, parameterColor, parameterLabel, CustomTooltip])
 
   return (
-    <div className="h-[400px] w-full">
+    <div className="h-full w-full">
       {showFallback && !isLoaded ? (
         <ChartFallback />
       ) : (

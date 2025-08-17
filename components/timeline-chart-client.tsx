@@ -152,20 +152,22 @@ export default function TimelineChartClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {!hasData ? (
-            <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-              No data available for {parameterLabel} in the selected date range.
-            </div>
-          ) : (
-            <LazyChart
-              data={chartData}
-              selectedParameter={selectedParameter}
-              selectedInterval={selectedInterval}
-              parameterColor={parameterColor}
-              parameterLabel={parameterLabel}
-              CustomTooltip={CustomTooltip}
-            />
-          )}
+          <div className="h-[400px]">
+            {!hasData ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                No data available for {parameterLabel} in the selected date range.
+              </div>
+            ) : (
+              <LazyChart
+                data={chartData}
+                selectedParameter={selectedParameter}
+                selectedInterval={selectedInterval}
+                parameterColor={parameterColor}
+                parameterLabel={parameterLabel}
+                CustomTooltip={CustomTooltip}
+              />
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

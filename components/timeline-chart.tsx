@@ -33,51 +33,41 @@ export function TimelineChart() {
     })
   }, [dateRange, selectedInterval, prefetchMutation])
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
-            <p className="text-sm text-muted-foreground">
-              Visualize parameter trends over time
-            </p>
-          </div>
-        </div>
-        <div className="flex h-[400px] items-center justify-center">
-          <LoadingState message="Loading timeline data..." />
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
-            <p className="text-sm text-muted-foreground">
-              Visualize parameter trends over time
-            </p>
-          </div>
-        </div>
-        <div className="flex h-[400px] items-center justify-center text-destructive">
-          Error: {error.message}
-        </div>
-      </div>
-    )
-  }
-
+  // Always render the same container structure to prevent layout shift
   return (
-    <TimelineChartClient
-      initialData={data || []}
-      availableParameters={VALUES_KEY_LABELS}
-      selectedInterval={selectedInterval}
-      selectedParameter={selectedParameter}
-      onIntervalChange={setSelectedInterval}
-      onParameterChange={handleParameterChange}
-      loadedParameters={new Set([selectedParameter])} // React Query handles caching
-    />
+    <div className="space-y-6">
+      {/* Header - Always present */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
+          <p className="text-sm text-muted-foreground">
+            Visualize parameter trends over time
+          </p>
+        </div>
+      </div>
+
+      {/* Content area with consistent height */}
+      <div className="min-h-[500px]">
+        {loading ? (
+          <div className="flex h-[400px] items-center justify-center">
+            <LoadingState message="Loading timeline data..." />
+          </div>
+        ) : error ? (
+          <div className="flex h-[400px] items-center justify-center text-destructive">
+            Error: {error.message}
+          </div>
+        ) : (
+          <TimelineChartClient
+            initialData={data || []}
+            availableParameters={VALUES_KEY_LABELS}
+            selectedInterval={selectedInterval}
+            selectedParameter={selectedParameter}
+            onIntervalChange={setSelectedInterval}
+            onParameterChange={handleParameterChange}
+            loadedParameters={new Set([selectedParameter])} // React Query handles caching
+          />
+        )}
+      </div>
+    </div>
   )
 }
