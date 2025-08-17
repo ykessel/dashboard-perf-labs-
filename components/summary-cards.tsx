@@ -16,14 +16,6 @@ import { useSummaryData } from "@/hooks/use-air-quality-queries"
 import { cn } from "@/lib/utils"
 import { config } from "@/lib/config"
 
-interface MetricCardData {
-  parameter: string
-  value: number
-  previousValue?: number
-  trend: "up" | "down" | "neutral"
-  lastUpdated: Date
-}
-
 export const SummaryCards = React.memo(function SummaryCards() {
   const { dateRange } = useDashboard()
   const [operator, setOperator] = useState<OPERATORS>(OPERATORS.AVG)
@@ -159,14 +151,14 @@ export const SummaryCards = React.memo(function SummaryCards() {
             </div>
 
             {/* Controls Container */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               {/* Parameters Button */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto" 
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto h-9 px-3" 
                     aria-label="Configure parameters"
                   >
                     <Settings className="h-4 w-4" />
@@ -221,7 +213,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
               {/* Operator Select */}
               <Select value={operator} onValueChange={handleOperatorChange}>
-                <SelectTrigger className="w-full sm:w-32" aria-label="Select aggregation operator">
+                <SelectTrigger className="w-full sm:w-32 h-9 px-3" aria-label="Select aggregation operator">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,14 +259,14 @@ export const SummaryCards = React.memo(function SummaryCards() {
           </div>
 
           {/* Controls Container */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             {/* Parameters Button */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto" 
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto h-9 px-3" 
                   aria-label="Configure parameters"
                 >
                   <Settings className="h-4 w-4" />
@@ -329,7 +321,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
             {/* Operator Select */}
             <Select value={operator} onValueChange={handleOperatorChange}>
-              <SelectTrigger className="w-full sm:w-32" aria-label="Select aggregation operator">
+              <SelectTrigger className="w-full sm:w-32 h-9 px-3" aria-label="Select aggregation operator">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

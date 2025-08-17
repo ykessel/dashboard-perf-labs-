@@ -1,0 +1,6 @@
+export { DataTable } from "./data-table"
+export { TableHeader } from "./table-header"
+export { TableBody } from "./table-body"
+export { TableSearch } from "./table-search"
+export { TableColumnSelector } from "./table-column-selector"
+export { TablePagination } from "./table-pagination"

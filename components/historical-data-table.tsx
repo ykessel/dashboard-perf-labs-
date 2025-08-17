@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { useDataTable } from "@/hooks/use-data-table"
 import { VALUES_KEY_LABELS } from "@/types/air-quality"
 import { useDashboard } from "@/components/dashboard-provider"
 import { useRangeData } from "@/hooks/use-air-quality-queries"
-import { BarChart3 } from "lucide-react"
 import type { TableColumn } from "@/types/table"
 
 interface TableRow {
@@ -120,14 +119,6 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
             Detailed air quality measurements over time
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-primary/10">
-            <BarChart3 className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {pagination.totalItems} records
-          </span>
-        </div>
       </div>
 
       {/* Data Table */}
@@ -135,7 +126,7 @@ export const HistoricalDataTable = React.memo(function HistoricalDataTable() {
         data={paginatedData}
         columns={tableColumns}
         loading={isLoading}
-        error={error?.message || null}
+        error={error ? String(error) : null}
         sort={sort}
         onSort={handleSort}
         pagination={pagination}

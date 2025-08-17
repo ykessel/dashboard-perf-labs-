@@ -9,6 +9,7 @@ import { format } from "date-fns"
 import type { DateRange } from "@/types/air-quality"
 import { cn } from "@/lib/utils"
 import { useDateRangePicker } from "@/hooks/use-date-range-picker"
+import { useIsMobile } from "@/hooks/use-media-query"
 
 interface DateRangePickerProps {
   dateRange: DateRange
@@ -72,7 +73,7 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
             <Button 
               size="sm" 
               onClick={onApply}
-              className="flex-1"
+              className="flex-1 order-1 sm:order-1"
             >
               Apply
             </Button>
@@ -80,7 +81,7 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
               size="sm" 
               variant="outline" 
               onClick={onCancel}
-              className="flex-1"
+              className="flex-1 order-2 sm:order-2"
             >
               Cancel
             </Button>
@@ -91,7 +92,7 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
               size="sm" 
               variant="outline" 
               onClick={onReset}
-              className="flex-1"
+              className="flex-1 order-1 sm:order-1"
             >
               Clear
             </Button>
@@ -99,7 +100,7 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
               size="sm" 
               variant="outline" 
               onClick={onCancel}
-              className="flex-1"
+              className="flex-1 order-2 sm:order-2"
             >
               Cancel
             </Button>
@@ -122,7 +123,11 @@ function CalendarActions({ tempDateRange, onApply, onCancel, onReset }: Calendar
   )
 }
 
-export const DateRangePicker = React.memo(function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
+export const DateRangePicker = React.memo(function DateRangePicker({ 
+  dateRange, 
+  onDateRangeChange 
+}: DateRangePickerProps) {
+  const isMobile = useIsMobile()
   const {
     isCalendarOpen,
     setIsCalendarOpen,
@@ -153,35 +158,38 @@ export const DateRangePicker = React.memo(function DateRangePicker({ dateRange, 
 
   return (
     <div className="flex items-center gap-3">
-      <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-        <CalendarDays className="h-4 w-4" />
-        <span>Date Range</span>
-      </div>
       <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
         <PopoverTrigger asChild>
           <Button
-            type="button"
             variant="outline"
             className={cn(
-              "w-[280px] justify-start text-left font-normal transition-all duration-200 hover:bg-accent hover:shadow-md cursor-pointer",
-              !dateRange && "text-muted-foreground",
+              "justify-start text-left font-normal w-full sm:w-auto",
+              !dateRange.from && "text-muted-foreground"
             )}
           >
             <Calendar className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
+            {dateRange.from ? (
               dateRange.to ? (
                 <>
-                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                  {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
                 </>
               ) : (
-                format(dateRange.from, "LLL dd, y")
+                format(dateRange.from, "MMM dd, yyyy")
               )
             ) : (
               <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 shadow-lg bg-background/95 backdrop-blur-sm" align="end">
+        <PopoverContent 
+          className={cn(
+            "w-auto p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+            isMobile ? "w-[calc(100vw-2rem)] max-w-[320px]" : "w-auto"
+          )}
+          align="end"
+          side="bottom"
+          sideOffset={4}
+        >
           <div className="p-3">
             <CalendarComponent
               autoFocus
@@ -189,7 +197,7 @@ export const DateRangePicker = React.memo(function DateRangePicker({ dateRange, 
               defaultMonth={tempDateRange?.from}
               selected={{ from: tempDateRange?.from, to: tempDateRange?.to }}
               onSelect={handleDateSelect}
-              numberOfMonths={2}
+              numberOfMonths={isMobile ? 1 : 2}
               // disabled={{ before: new Date(2004, 0, 1), after: new Date(2005, 11, 31) }}
               modifiers={{
                 inRange: isInRange
@@ -198,6 +206,40 @@ export const DateRangePicker = React.memo(function DateRangePicker({ dateRange, 
                 inRange: { backgroundColor: 'var(--accent)', color: 'var(--accent-foreground)' }
               }}
               showOutsideDays={true}
+              // Mobile optimizations
+              classNames={{
+                months: cn(
+                  "flex space-y-4",
+                  isMobile ? "flex-col" : "flex-row sm:space-x-4 sm:space-y-0"
+                ),
+                month: "space-y-4",
+                caption: "flex justify-center pt-1 relative items-center",
+                caption_label: "text-sm font-medium",
+                nav: "space-x-1 flex items-center",
+                nav_button: cn(
+                  "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                ),
+                nav_button_previous: "absolute left-1",
+                nav_button_next: "absolute right-1",
+                table: "w-full border-collapse space-y-1",
+                head_row: "flex",
+                head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
+                row: "flex w-full mt-2",
+                cell: cn(
+                  "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
+                  "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
+                ),
+                day: cn(
+                  "h-8 w-8 p-0 font-normal aria-selected:opacity-100",
+                  "hover:bg-accent hover:text-accent-foreground"
+                ),
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                day_today: "bg-accent text-accent-foreground",
+                day_outside: "text-muted-foreground opacity-50",
+                day_disabled: "text-muted-foreground opacity-50",
+                day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                day_hidden: "invisible",
+              }}
             />
             <CalendarActions
               tempDateRange={tempDateRange}
