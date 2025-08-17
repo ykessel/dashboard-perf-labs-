@@ -100,16 +100,8 @@ export default function TimelineChartClient({
 
   return (
     <div className="space-y-6">
-      {/* Header + filtros */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-foreground">Timeline Analysis</h2>
-          <p className="text-sm text-muted-foreground">
-            Visualize parameter trends over time
-          </p>
-        </div>
-      </div>
+      {/* Controls */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex gap-3">
           <Select value={selectedParameter} onValueChange={onParameterChange}>
             <SelectTrigger className="w-48" aria-label="Select air quality parameter">

@@ -1,10 +1,11 @@
 import { DashboardHeader } from "@/components/dashboard-header"
 import { TimelineChart } from "@/components/timeline-chart"
-import type { DateRange } from "@/types/air-quality"
 import { DashboardProvider } from "@/components/dashboard-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { HistoricalDataTable } from "@/components/historical-data-table"
 import { SummaryCards } from "@/components/summary-cards"
+import type { DateRange } from "@/types/air-quality"
+
 
 // Default date range for initial load
 const defaultDateRange: DateRange = {
