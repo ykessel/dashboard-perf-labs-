@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useRef } from "react"
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { TrendingUp, TrendingDown, Minus, AlertCircle, Settings } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -12,8 +12,130 @@ import { ConnectionStatus } from "@/components/connection-status"
 import { OPERATORS, VALUES_KEY_LABELS } from "@/types/air-quality"
 import { useUnifiedSocket } from "@/hooks/use-unified-socket"
 import { cn } from "@/lib/utils"
+import { PerformanceWrapper, usePerformanceMonitor } from "@/components/performance-wrapper"
+
+// Memoized individual card component to prevent unnecessary re-renders
+const SummaryCard = React.memo<{
+  parameter: string
+  value: number
+  previousValue?: number
+  trend: "up" | "down" | "neutral"
+  lastUpdated: Date
+}>(({ parameter, value, previousValue, trend, lastUpdated }) => {
+  const label = VALUES_KEY_LABELS[parameter as keyof typeof VALUES_KEY_LABELS]?.label || parameter
+  
+  const getTrendIcon = useCallback(() => {
+    switch (trend) {
+      case "up":
+        return <TrendingUp className="h-4 w-4 text-green-500" />
+      case "down":
+        return <TrendingDown className="h-4 w-4 text-red-500" />
+      default:
+        return <Minus className="h-4 w-4 text-gray-500" />
+    }
+  }, [trend])
+
+  const getValueColor = useCallback(() => {
+    // Add color coding based on parameter values
+    if (parameter === "CO" && value > 9) return "text-red-600"
+    if (parameter === "NO2" && value > 200) return "text-red-600"
+    if (parameter === "T" && (value < 10 || value > 30)) return "text-orange-600"
+    return "text-foreground"
+  }, [parameter, value])
+
+  return (
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+          {label}
+          {getTrendIcon()}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="text-2xl font-bold">
+          <span className={getValueColor()}>
+            {typeof value === 'number' ? value.toFixed(2) : 'N/A'}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </p>
+      </CardContent>
+    </Card>
+  )
+})
+
+SummaryCard.displayName = 'SummaryCard'
+
+// Memoized settings component
+const SettingsPanel = React.memo<{
+  operator: OPERATORS
+  setOperator: (operator: OPERATORS) => void
+  selectedParams: Set<string>
+  setSelectedParams: (params: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+}>(({ operator, setOperator, selectedParams, setSelectedParams }) => {
+  const handleParamToggle = useCallback((param: string) => {
+    setSelectedParams((prev: Set<string>) => {
+      const newSet = new Set(prev)
+      if (newSet.has(param)) {
+        newSet.delete(param)
+      } else {
+        newSet.add(param)
+      }
+      return newSet
+    })
+  }, [setSelectedParams])
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80" align="end">
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium leading-none mb-2">Aggregation Method</h4>
+            <Select value={operator} onValueChange={(value) => setOperator(value as OPERATORS)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={OPERATORS.AVG}>Average</SelectItem>
+                <SelectItem value={OPERATORS.MAX}>Maximum</SelectItem>
+                <SelectItem value={OPERATORS.MIN}>Minimum</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <h4 className="font-medium leading-none mb-2">Display Parameters</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(VALUES_KEY_LABELS).map(([key, labelObj]) => (
+                <div key={key} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={key}
+                    checked={selectedParams.has(key)}
+                    onCheckedChange={() => handleParamToggle(key)}
+                  />
+                  <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {labelObj.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+})
+
+SettingsPanel.displayName = 'SettingsPanel'
 
 export const SummaryCards = React.memo(function SummaryCards() {
+  usePerformanceMonitor('SummaryCards')
+  
   const [operator, setOperator] = useState<OPERATORS>(OPERATORS.AVG)
   const [selectedParams, setSelectedParams] = useState<Set<string>>(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
   const [previousValues, setPreviousValues] = useState<Record<string, number>>({})
@@ -35,7 +157,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
   // All available parameters to display in cards
   const allParams = Object.keys(VALUES_KEY_LABELS)
-  const displayParams = Array.from(selectedParams)
+  const displayParams = useMemo(() => Array.from(selectedParams), [selectedParams])
 
   // Transform Socket.IO data to our format with real-time updates
   const metrics = useMemo(() => {
@@ -98,7 +220,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
       if (hasChanges) {
         return {
           ...prev,
-          ...newPreviousValues
+          ...newPreviousValues,
         }
       }
       
@@ -189,63 +311,12 @@ export const SummaryCards = React.memo(function SummaryCards() {
             {/* Controls Container */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               {/* Parameters Button */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" 
-                    aria-label="Configure parameters"
-                  >
-                    <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Parámetros</span>
-                    <span className="sm:hidden">Configurar</span>
-                    <span className="text-xs">({selectedParams.size})</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 bg-background/95 backdrop-blur-sm" align="center">
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={selectDefaultParameters} 
-                          aria-label="Select default parameters"
-                          className="flex-1 sm:flex-none text-xs"
-                        >
-                          <span className="hidden sm:inline">Predeterminados</span>
-                          <span className="sm:hidden">Default</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={selectAllParameters} 
-                          aria-label="Select all parameters"
-                          className="flex-1 sm:flex-none text-xs"
-                        >
-                          <span className="hidden sm:inline">Todos</span>
-                          <span className="sm:hidden">All</span>
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                      {allParams.map((param) => (
-                        <div key={param} className="flex items-center space-x-3">
-                          <Checkbox
-                            id={`error-${param}`}
-                            checked={selectedParams.has(param)}
-                            onCheckedChange={() => toggleParameter(param)}
-                          />
-                          <label htmlFor={`error-${param}`} className="text-sm font-normal cursor-pointer text-foreground">
-                            {VALUES_KEY_LABELS[param]?.label || param}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <SettingsPanel
+                operator={operator}
+                setOperator={handleOperatorChange}
+                selectedParams={selectedParams}
+                setSelectedParams={toggleParameter}
+              />
 
               {/* Operator Select */}
               <Select value={operator} onValueChange={handleOperatorChange}>
@@ -299,63 +370,12 @@ export const SummaryCards = React.memo(function SummaryCards() {
           {/* Controls Container */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             {/* Parameters Button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" 
-                  aria-label="Configure parameters"
-                >
-                  <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Parámetros</span>
-                  <span className="sm:hidden">Configurar</span>
-                  <span className="text-xs">({selectedParams.size})</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 bg-background/95 backdrop-blur-sm" align="center">
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={selectDefaultParameters} 
-                        aria-label="Select default parameters"
-                        className="flex-1 sm:flex-none text-xs"
-                      >
-                        <span className="hidden sm:inline">Predeterminados</span>
-                        <span className="sm:hidden">Default</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={selectAllParameters} 
-                        aria-label="Select all parameters"
-                        className="flex-1 sm:flex-none text-xs"
-                      >
-                        <span className="hidden sm:inline">Todos</span>
-                        <span className="sm:hidden">All</span>
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                    {allParams.map((param) => (
-                      <div key={param} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={param}
-                          checked={selectedParams.has(param)}
-                          onCheckedChange={() => toggleParameter(param)}
-                        />
-                        <label htmlFor={param} className="text-sm font-normal cursor-pointer text-foreground">
-                          {VALUES_KEY_LABELS[param]?.label || param}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <SettingsPanel
+              operator={operator}
+              setOperator={handleOperatorChange}
+              selectedParams={selectedParams}
+              setSelectedParams={toggleParameter}
+            />
 
             {/* Operator Select */}
             <Select value={operator} onValueChange={handleOperatorChange}>
@@ -383,55 +403,14 @@ export const SummaryCards = React.memo(function SummaryCards() {
           const label = VALUES_KEY_LABELS[param]?.label || param
 
           return (
-            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm min-h-[140px] sm:min-h-[130px] md:min-h-[120px] performance-optimized py-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate pr-2">{label}</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 px-3 sm:px-2">
-                <div className="flex items-center justify-between h-full min-h-[80px] sm:min-h-[60px]">
-                  <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-2xl sm:text-2xl md:text-2xl lg:text-2xl font-bold transition-all duration-500 truncate leading-tight",
-                        isLoading ? "text-muted-foreground" : getTrendColor(metric?.trend || "neutral"),
-                        metric?.trend !== "neutral" && "animate-pulse"
-                      )}
-                    >
-                      {isLoading ? "--" : metric?.value?.toFixed(2) || "0.00"}
-                    </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white w-fit">
-                        {operator}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
-                    {!isLoading && metric && (
-                      <div className="transition-all duration-300">{getTrendIcon(metric.trend)}</div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-
-              {/* Enhanced loading indicator */}
-              {isLoading && (
-                <div className="absolute inset-0 bg-card/80 backdrop-blur-sm flex items-center justify-center">
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    <span className="text-sm">Connecting...</span>
-                  </div>
-                </div>
-              )}
-
-              {metric && metric.trend !== "neutral" && !isLoading && (
-                <div
-                  className={cn(
-                    "absolute top-2 right-2 h-3 w-3 rounded-full animate-pulse shadow-sm",
-                    metric.trend === "up" ? "bg-green-500" : "bg-red-500",
-                  )}
-                />
-              )}
-            </Card>
+            <SummaryCard
+              key={param}
+              parameter={param}
+              value={metric?.value || 0}
+              previousValue={metric?.previousValue}
+              trend={metric?.trend || "neutral"}
+              lastUpdated={metric?.lastUpdated || new Date()}
+            />
           )
         })}
         </div>

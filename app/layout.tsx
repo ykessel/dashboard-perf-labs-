@@ -11,7 +11,11 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
   preload: true,
   fallback: ['system-ui', 'arial'],
+  // Optimize font loading
+  adjustFontFallback: true,
 })
+
+const geistMono = GeistMono
 
 export const metadata: Metadata = {
   title: "Air Quality Monitor - Environmental Dashboard",
@@ -56,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${geistMono.variable}`}>
       <head>
         {/* Preconnect to external domains for faster resource loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
