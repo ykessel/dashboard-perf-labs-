@@ -31,7 +31,7 @@ export default function Dashboard() {
               {/* Timeline Chart Section */}
               <section className="space-y-6">
                 <TimelineChart />
-              </section>
+              </section> 
 
               {/* Table Section */}
               <section className="space-y-6">

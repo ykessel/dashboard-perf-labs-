@@ -10,12 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionStatus } from "@/components/connection-status"
 import { OPERATORS, VALUES_KEY_LABELS } from "@/types/air-quality"
-import { useDashboard } from "@/components/dashboard-provider"
 import { useUnifiedSocket } from "@/hooks/use-unified-socket"
 import { cn } from "@/lib/utils"
 
 export const SummaryCards = React.memo(function SummaryCards() {
-  const { dateRange } = useDashboard()
   const [operator, setOperator] = useState<OPERATORS>(OPERATORS.AVG)
   const [selectedParams, setSelectedParams] = useState<Set<string>>(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
   const [previousValues, setPreviousValues] = useState<Record<string, number>>({})
@@ -28,8 +26,6 @@ export const SummaryCards = React.memo(function SummaryCards() {
     isConnected, 
     data: socketData, 
     error: socketError, 
-    isSimulated,
-    simulateError 
   } = useUnifiedSocket({
     useSimulator: false, // Use real Socket.IO only
     simulatorOptions: {
@@ -140,12 +136,6 @@ export const SummaryCards = React.memo(function SummaryCards() {
     setSelectedParams(new Set(["CO", "NO2", "T", "RH", "PT08S1", "NMHC"]))
   }
 
-  const handleSimulateError = () => {
-    if (simulateError) {
-      simulateError('Simulated connection error for testing')
-    }
-  }
-
   const getTrendIcon = (trend: "up" | "down" | "neutral") => {
     switch (trend) {
       case "up":
@@ -175,12 +165,12 @@ export const SummaryCards = React.memo(function SummaryCards() {
     return (
       <div className="space-y-4">
         {/* Header Section - Mobile Optimized */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Title and Info */}
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <div className="space-y-1 sm:space-y-2">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
               Environmental Metrics Summary 
-              <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
+              <span className="text-xs sm:text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
                 ({selectedParams.size} de {allParams.length} parámetros)
               </span>
             </h2>
@@ -190,9 +180,9 @@ export const SummaryCards = React.memo(function SummaryCards() {
           </div>
 
           {/* Controls - Mobile Stacked, Desktop Horizontal */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/* Connection Status */}
-            <div className="flex items-center justify-center sm:justify-start gap-3">
+            <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
               <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
             </div>
 
@@ -204,10 +194,10 @@ export const SummaryCards = React.memo(function SummaryCards() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto h-9 px-3" 
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" 
                     aria-label="Configure parameters"
                   >
-                    <Settings className="h-4 w-4" />
+                    <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Parámetros</span>
                     <span className="sm:hidden">Configurar</span>
                     <span className="text-xs">({selectedParams.size})</span>
@@ -222,7 +212,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
                           size="sm" 
                           onClick={selectDefaultParameters} 
                           aria-label="Select default parameters"
-                          className="flex-1 sm:flex-none"
+                          className="flex-1 sm:flex-none text-xs"
                         >
                           <span className="hidden sm:inline">Predeterminados</span>
                           <span className="sm:hidden">Default</span>
@@ -232,7 +222,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
                           size="sm" 
                           onClick={selectAllParameters} 
                           aria-label="Select all parameters"
-                          className="flex-1 sm:flex-none"
+                          className="flex-1 sm:flex-none text-xs"
                         >
                           <span className="hidden sm:inline">Todos</span>
                           <span className="sm:hidden">All</span>
@@ -259,7 +249,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
               {/* Operator Select */}
               <Select value={operator} onValueChange={handleOperatorChange}>
-                <SelectTrigger className="w-full sm:w-32 h-9 px-3" aria-label="Select aggregation operator">
+                <SelectTrigger className="w-full sm:w-32 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" aria-label="Select aggregation operator">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,13 +275,13 @@ export const SummaryCards = React.memo(function SummaryCards() {
   return (
     <div className="space-y-6">
       {/* Header Section - Mobile Optimized */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Title and Info */}
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <div className="space-y-1 sm:space-y-2">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
             Environmental Metrics Summary
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {selectedParams.size} de {allParams.length} parámetros seleccionados
           </p>
           <p className="text-xs text-blue-700 dark:text-blue-300">
@@ -300,9 +290,9 @@ export const SummaryCards = React.memo(function SummaryCards() {
         </div>
 
         {/* Controls - Mobile Stacked, Desktop Horizontal */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Connection Status */}
-          <div className="flex items-center justify-center sm:justify-start gap-3">
+          <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
             <ConnectionStatus isConnected={isConnected} hasError={!!socketError} />
           </div>
 
@@ -314,10 +304,10 @@ export const SummaryCards = React.memo(function SummaryCards() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto h-9 px-3" 
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" 
                   aria-label="Configure parameters"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Parámetros</span>
                   <span className="sm:hidden">Configurar</span>
                   <span className="text-xs">({selectedParams.size})</span>
@@ -332,7 +322,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
                         size="sm" 
                         onClick={selectDefaultParameters} 
                         aria-label="Select default parameters"
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none text-xs"
                       >
                         <span className="hidden sm:inline">Predeterminados</span>
                         <span className="sm:hidden">Default</span>
@@ -342,7 +332,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
                         size="sm" 
                         onClick={selectAllParameters} 
                         aria-label="Select all parameters"
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none text-xs"
                       >
                         <span className="hidden sm:inline">Todos</span>
                         <span className="sm:hidden">All</span>
@@ -369,7 +359,7 @@ export const SummaryCards = React.memo(function SummaryCards() {
 
             {/* Operator Select */}
             <Select value={operator} onValueChange={handleOperatorChange}>
-              <SelectTrigger className="w-full sm:w-32 h-9 px-3" aria-label="Select aggregation operator">
+              <SelectTrigger className="w-full sm:w-32 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm" aria-label="Select aggregation operator">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -387,29 +377,29 @@ export const SummaryCards = React.memo(function SummaryCards() {
           <p>Selecciona al menos un parámetro para ver los datos</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 layout-stable">
+        <div className="grid gap-2 sm:gap-3 md:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 layout-stable">
           {displayParams.map((param: string) => {
           const metric = metrics.find((m) => m.parameter === param)
           const label = VALUES_KEY_LABELS[param]?.label || param
 
           return (
-            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm h-[120px] performance-optimized">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3">
+            <Card key={param} className="relative overflow-hidden card-hover border-0 shadow-sm min-h-[140px] sm:min-h-[130px] md:min-h-[120px] performance-optimized py-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
                 <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate pr-2">{label}</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between h-full">
+              <CardContent className="pt-0 px-3 sm:px-2">
+                <div className="flex items-center justify-between h-full min-h-[80px] sm:min-h-[60px]">
                   <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
                     <p
                       className={cn(
-                        "text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 truncate",
+                        "text-2xl sm:text-2xl md:text-2xl lg:text-2xl font-bold transition-all duration-500 truncate leading-tight",
                         isLoading ? "text-muted-foreground" : getTrendColor(metric?.trend || "neutral"),
                         metric?.trend !== "neutral" && "animate-pulse"
                       )}
                     >
                       {isLoading ? "--" : metric?.value?.toFixed(2) || "0.00"}
                     </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white w-fit">
                         {operator}
                       </span>
