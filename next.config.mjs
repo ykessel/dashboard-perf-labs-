@@ -13,7 +13,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
     // Remove optimizeCss to avoid critters issues in production
-    // optimizeCss: true,
+    optimizeCss: true,
     turbo: {
       rules: {
         '*.svg': {
